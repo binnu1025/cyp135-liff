@@ -3,141 +3,280 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>CYP135 戰情中心</title>
+    <title>CYP135 會長管理系統</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --main: #8E9775; --bg: #FAF9F6; --txt: #4A4A4A; }
-        body { background: var(--bg); color: var(--txt); font-family: "PingFang TC", sans-serif; margin: 0; }
-        .tab-bar { display: flex; background: #fff; position: sticky; top: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .tab { flex: 1; text-align: center; padding: 15px 0; font-size: 14px; color: #BBB; cursor: pointer; border-bottom: 2px solid transparent; transition: 0.3s; }
-        .tab.active { color: var(--main); border-bottom: 2px solid var(--main); font-weight: 500; }
-        .container { padding: 30px 20px; max-width: 500px; margin: 0 auto; }
-        h2 { font-weight: 300; letter-spacing: 2px; color: var(--main); margin-bottom: 30px; }
-        .group { margin-bottom: 25px; }
-        label { display: block; font-size: 11px; color: #AAA; margin-bottom: 5px; text-transform: uppercase; }
-        input, select { width: 100%; border: none; border-bottom: 1px solid #EEE; background: transparent; padding: 10px 0; font-size: 16px; outline: none; transition: 0.3s; }
-        input:focus { border-bottom: 1px solid var(--main); }
-        .btn { width: 100%; background: var(--main); color: #fff; border: none; padding: 15px; border-radius: 2px; font-size: 15px; letter-spacing: 2px; cursor: pointer; margin-top: 20px; }
-        .card { background: #fff; padding: 20px; border-radius: 4px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .card img { width: 100%; border-radius: 2px; margin: 10px 0; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        :root { --main-dark: #000000; --sub-gray: #666666; --bg-white: #FFFFFF; --border: #E0E0E0; }
+        body { background: var(--bg-white); color: var(--main-dark); font-family: "PingFang TC", "Noto Sans TC", sans-serif; margin: 0; font-size: 18px; line-height: 1.6; }
+        .tab-bar { display: flex; background: #fff; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+        .tab { flex: 1; text-align: center; padding: 20px 0; font-size: 16px; color: #999; cursor: pointer; transition: 0.2s; }
+        .tab.active { color: var(--main-dark); font-weight: 900; border-bottom: 3px solid var(--main-dark); }
+        .container { padding: 40px 24px; max-width: 600px; margin: 0 auto; }
+        h2 { font-weight: 700; font-size: 28px; margin-bottom: 10px; }
+        .subtitle { font-size: 15px; color: var(--sub-gray); margin-bottom: 40px; border-left: 3px solid var(--main-dark); padding-left: 12px; }
+        .group { margin-bottom: 35px; }
+        label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+        input, select { width: 100%; border: none; border-bottom: 2px solid var(--border); background: transparent; padding: 12px 0; font-size: 18px; color: var(--main-dark); outline: none; border-radius: 0; transition: 0.3s; }
+        input:focus { border-bottom: 2px solid var(--main-dark); }
+        .btn { width: 100%; background: var(--main-dark); color: #fff; border: none; padding: 20px; border-radius: 4px; font-size: 18px; font-weight: 700; letter-spacing: 4px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn:disabled { background: #CCC; cursor: not-allowed; }
+        .member-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; border: 1px solid var(--border); margin-bottom: 12px; border-radius: 8px; }
+        .member-item.locked { background: #F5F5F5; color: #BBB; pointer-events: none; opacity: 0.5; border-color: #EEE; }
+        .badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: #EEE; }
+        .card { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        #loading { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); justify-content:center; align-items:center; }
+        .modal img { max-width:90%; max-height:80%; }
     </style>
 </head>
 <body>
 
-<div id="loading">讀取時光中...</div>
+<div id="loading">讀取中...</div>
+<div id="imgModal" class="modal" onclick="this.style.display='none'"><img id="modalImg"></div>
 
 <div class="tab-bar">
-    <div class="tab active" onclick="showTab('reg')">代領夥伴</div>
-    <div class="tab" onclick="showTab('ref')">成功推薦</div>
-    <div class="tab" id="admTab" style="display:none" onclick="showTab('adm')">會長審核</div>
+    <div class="tab active" id="t-ref" onclick="switchTab('ref')">成功推薦</div>
+    <div class="tab" id="t-cons" onclick="switchTab('cons')">增加消費</div>
+    <div class="tab" id="t-adm" style="display:none" onclick="switchTab('adm')">會長專區</div>
 </div>
 
 <div class="container">
-    <div id="reg" class="page">
-        <h2>寫下夥伴的起點</h2>
-        <div id="groupHint" style="font-size: 13px; color: #999; margin-bottom: 20px;"></div>
-        <form id="regForm">
-            <div class="group"><label>安麗編號</label><input type="number" id="rId" required></div>
-            <div class="group"><label>姓名</label><input type="text" id="rName" required></div>
-            <button class="btn" type="submit">確認報名</button>
+    <div id="ref" class="page">
+        <h2>紀錄新雁起飛</h2>
+        <div class="subtitle" id="ref-hint">數據載入中...</div>
+        <form id="refForm">
+            <div class="group"><label>推薦人 (參賽夥伴)</label><select id="inv-select" required></select></div>
+            <div class="group"><label>新人編號</label><input type="number" id="tarId" required></div>
+            <div class="group"><label>新人姓名 (完整姓名)</label><input type="text" id="tarName" required></div>
+            <div class="group"><label>加入日期</label><input type="date" id="tarDate" min="2026-03-01" max="2026-05-31" required></div>
+            <div class="group"><label>首購金額</label><input type="number" id="tarAmt" required></div>
+            <div class="group"><label>憑證上傳</label><input type="file" id="tarImg" accept="image/*"></div>
+            <button class="btn" type="submit">提交數據</button>
         </form>
     </div>
 
-    <div id="ref" class="page" style="display:none">
-        <h2>紀錄這份喜悅</h2>
-        <form id="refForm">
-            <div class="group"><label>新人編號</label><input type="number" id="tId" required></div>
-            <div class="group"><label>新人姓名</label><input type="text" id="tName" required></div>
-            <div class="group"><label>加入日期</label><input type="date" id="tDate" required></div>
-            <div class="group"><label>首購金額</label><input type="number" id="tAmt" required></div>
-            <div class="group"><label>憑證上傳</label><input type="file" id="tImg" accept="image/*"></div>
-            <button class="btn" type="submit">提交審核</button>
-        </form>
+    <div id="cons" class="page" style="display:none">
+        <h2>增加消費金額</h2>
+        <div class="subtitle">點選未滿 3000 元之夥伴</div>
+        <div id="member-list"></div>
+        <div id="cons-form" style="display:none; margin-top:30px; border-top:1px dashed #DDD; padding-top:20px;">
+            <h3 id="selected-name" style="font-weight:700; margin-bottom: 20px;"></h3>
+            <form id="submitConsForm">
+                <input type="hidden" id="cTarId"><input type="hidden" id="cTarName">
+                <div class="group"><label>本次消費金額</label><input type="number" id="cAmt" required></div>
+                <div class="group"><label>消費憑證</label><input type="file" id="cImg" accept="image/*" required></div>
+                <button class="btn" type="submit">提交數據</button>
+            </form>
+        </div>
     </div>
 
     <div id="adm" class="page" style="display:none">
-        <h2>待處理的芬芳</h2>
-        <div id="pendingList"></div>
+        <h2>會長專區</h2>
+        <div class="tab-bar" style="position: relative; margin-bottom:20px;">
+            <div class="tab active" style="padding:10px" onclick="subTab('pending')">待審核</div>
+            <div class="tab" style="padding:10px" onclick="subTab('stats')">績效統計</div>
+            <div class="tab" style="padding:10px" onclick="subTab('roster')">參賽名單</div>
+        </div>
+        <div id="admin-content"></div>
     </div>
 </div>
 
 <script>
     const LIFF_ID = '2009757859-5wc8ZiNA';
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwWfwHJ6KhtydwBWxcUDtPOPDUkW8O1r55utE0APsZuH5QKFvhWKtC79BJAOJPcoc4l/exec';
-    let userProfile = null;
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNbX790U-eOj92BC-_sOddIupXjf1dcKiC9qOfpWAD8Z019cA2X4EVLsW1Zqldaxml/exec';
+    
+    let state = { user: null, participants: [], newbies: [], isAdmin: false, uid: "本地開發" };
 
     async function init() {
-        await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()) { liff.login(); return; }
-        const profile = await liff.getProfile();
-        const res = await fetch(`${GAS_URL}?action=getSystemData&uid=${profile.userId}`);
-        const result = await res.json();
-        
-        userProfile = result.data.profile;
-        if (userProfile) document.getElementById('groupHint').innerText = `正在為「${userProfile.group}」報名夥伴`;
-        if (result.data.isPresident) {
-            document.getElementById('admTab').style.display = 'block';
-            loadPending();
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = urlParams.get('page');
+        const h = window.location.hostname;
+        const isLocal = h === "127.0.0.1" || h === "localhost" || h.startsWith("192.");
+
+        if (isLocal) {
+            console.warn("🛠️ 本地開發模式");
+            state = { 
+                user: { name: "陳緯宸", group: "陳緯宸" }, 
+                participants: [{name:"陳緯宸", id:"9275730"}],
+                newbies: [{name:"胡依潔", id:"999", spent:1200}, {name:"張小華", id:"888", spent:5000}],
+                isAdmin: true, uid: "本地開發_緯宸"
+            };
+            renderUI(); document.getElementById('loading').style.display='none'; if(page) switchTab(page); return;
         }
-        document.getElementById('loading').style.display = 'none';
+
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            const profile = await liff.getProfile();
+            state.uid = profile.userId; 
+            await refreshData(); 
+            document.getElementById('loading').style.display='none';
+            if(page) switchTab(page);
+        } catch (err) { alert("系統連線發生錯誤，請重新整理。"); }
     }
 
-    function showTab(id) {
+    async function refreshData() {
+        try {
+            const res = await fetch(`${GAS_URL}?action=getInitData&uid=${state.uid}`);
+            const result = await res.json();
+            if(!result.success) { alert(`發生錯誤: ${result.message}`); return; }
+            if(result.data.error) { alert("尚未註冊於雁群總名冊中。"); return; }
+            
+            state.user = result.data.myProfile;
+            state.participants = result.data.participants;
+            state.newbies = result.data.newbies;
+            state.isAdmin = result.data.isPresident;
+            renderUI();
+        } catch(e) { console.error("讀取失敗", e); }
+    }
+
+    function renderUI() {
+        document.getElementById('ref-hint').innerText = `管理小組：${state.user.group}`;
+        document.getElementById('inv-select').innerHTML = state.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        document.getElementById('member-list').innerHTML = state.newbies.map(m => {
+            const isDone = m.spent >= 3000;
+            return `<div class="member-item ${isDone ? 'locked' : ''}" onclick="selectForCons('${m.id}', '${m.name}')">
+                    <span>${m.name} <small style="color:#999">($${m.spent})</small></span>
+                    <span class="badge">${isDone ? '已達標' : '未滿額'}</span></div>`;
+        }).join('');
+        if (state.isAdmin) document.getElementById('t-adm').style.display = 'block';
+    }
+
+    function selectForCons(id, name) {
+        document.getElementById('cons-form').style.display = 'block';
+        document.getElementById('selected-name').innerText = `為 ${name} 增加消費`;
+        document.getElementById('cTarId').value = id;
+        document.getElementById('cTarName').value = name;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    async function switchTab(id) {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-bar > .tab').forEach(t => t.classList.remove('active'));
         document.getElementById(id).style.display = 'block';
-        event.currentTarget.classList.add('active');
+        document.getElementById('t-' + id).classList.add('active');
+        if(id === 'adm') subTab('pending');
     }
 
-    async function loadPending() {
-        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'getPendingList' }) });
-        const result = await res.json();
-        const list = document.getElementById('pendingList');
-        list.innerHTML = result.list.length ? '' : '<p style="color:#CCC">目前沒有待辦事項</p>';
-        result.list.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <div style="font-size:12px; color:#999">${item.ts}</div>
-                <div style="margin:10px 0"><b>${item.inv}</b> 推薦 <b>${item.tar}</b></div>
-                <div style="font-size:14px">金額：$${item.amt}</div>
-                ${item.img ? `<img src="${item.img}" onclick="window.open('${item.img}')">` : ''}
-                <button class="btn" style="background:#8E9775" onclick="adminOp(${item.row}, 'approve')">✅ 通過</button>
-                <button class="btn" style="background:#D4A373; margin-top:10px" onclick="adminOp(${item.row}, 'reject')">❌ 駁回</button>
-            `;
-            list.appendChild(card);
-        });
+    async function subTab(type) {
+        const content = document.getElementById('admin-content');
+        content.innerHTML = '<p style="text-align:center; padding: 20px;">數據處理中...</p>';
+        
+        try {
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'getAdminDashboard' }) });
+            const json = await res.json();
+            
+            // 🌟 錯誤精準攔截：如果 GAS 噴錯，這裡會直接顯示原因，不再是籠統的讀取失敗
+            if(!json.success) {
+                content.innerHTML = `<p style="text-align:center; color:#D32F2F; padding:20px; font-weight:bold;">🚨 雲端讀取異常：<br>${json.message}</p>`;
+                return;
+            }
+            
+            const d = json.data;
+            
+            if (type === 'pending') {
+                // 🌟 待審核清單大升級：現在會以「小組」為單位畫一個大框！
+                content.innerHTML = d.pending.length ? d.pending.map(g => `
+                    <div class="card" style="padding:0; overflow:hidden;">
+                        <h3 style="margin:0; background:var(--main-dark); color:#fff; padding:15px 24px; font-size:20px;">[ ${g.groupName} ] 待審核單</h3>
+                        <div style="padding:24px;">
+                            ${g.items.map(r => `
+                                <div style="margin-bottom: 30px; padding-bottom: 25px; border-bottom: 1px dashed var(--border);">
+                                    <div style="font-size:14px; color:#999; margin-bottom: 12px; font-weight: 700;">
+                                        <span style="background:#EEE; padding:4px 10px; border-radius:4px; color:#000; margin-right:8px">${r.type}</span> 
+                                        ${new Date(r.ts).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                    <p style="font-size: 18px; margin: 5px 0;"><b>${r.invName}</b> 推薦 <b>${r.tarName}</b> <span style="color:#666">(${r.amt ? '$'+r.amt : '無金額'})</span></p>
+                                    ${r.img ? `<img src="${r.img}" style="width:100%; border-radius:8px; margin-top: 15px; border:1px solid #EEE;" onclick="viewImg('${r.img}')">` : '<p style="font-size:14px; color:#AAA; margin-top:10px;">(此單無附圖)</p>'}
+                                    <div style="display:flex; gap:10px; margin-top:20px">
+                                        <button class="btn" style="flex:1; padding:12px; margin-top:0;" onclick="review(${r.row}, 'approve')">核准</button>
+                                        <button class="btn" style="flex:1; padding:12px; margin-top:0; background:#666" onclick="review(${r.row}, 'reject')">駁回</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('') : '<p style="text-align:center; padding: 20px;">暫無待處理項目</p>';
+                
+            } else if (type === 'stats') {
+                content.innerHTML = d.stats.map(s => `
+                    <div class="card">
+                        <h3 style="margin:0">${s.groupName} <span style="float:right">${s.score}分</span></h3>
+                        <div style="font-size:16px; margin-top:20px; color:#000; line-height:1.8">
+                            ${s.details.map(txt => `• ${txt}`).join('<br>')}
+                        </div>
+                    </div>
+                `).join('');
+            } else if (type === 'roster') {
+                content.innerHTML = d.stats.map(s => `
+                    <div class="card">
+                        <h4 style="margin:0; font-size:22px;">[ ${s.groupName} ] 參賽名單 ${s.memberCount} 人</h4>
+                        <p style="letter-spacing:1px; line-height:1.8; margin-top:15px; font-size:18px;">${s.members.join('、')}</p>
+                    </div>
+                `).join('');
+            }
+        } catch(e) {
+            content.innerHTML = '<p style="text-align:center; color:#D32F2F; padding:20px;">🚨 網路連線錯誤，請重試。</p>';
+        }
     }
 
-    async function adminOp(row, type) {
+    function viewImg(url) { document.getElementById('modalImg').src = url; document.getElementById('imgModal').style.display = 'flex'; }
+    
+    async function review(row, action) {
         if(!confirm('確認執行此操作？')) return;
-        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: type + 'Referral', payload: { row } }) });
-        const result = await res.json();
-        alert(result.message);
-        loadPending();
-    }
-
-    document.getElementById('regForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const payload = { uid: 'PROXY_'+Date.now(), amId: document.getElementById('rId').value, name: document.getElementById('rName').value, group: userProfile.group, regBy: userProfile.name };
-        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitRegistration', payload }) });
+        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action, payload: { row } }) });
         alert((await res.json()).message);
-        liff.closeWindow();
-    };
+        subTab('pending');
+    }
 
     document.getElementById('refForm').onsubmit = async (e) => {
         e.preventDefault();
-        const file = document.getElementById('tImg').files[0];
-        let imageData = "";
-        if (file) {
-            const reader = new FileReader();
-            imageData = await new Promise(r => { reader.onload = () => r(reader.result); reader.readAsDataURL(file); });
+        const btn = e.target.querySelector('button'); 
+        
+        const inputDate = new Date(document.getElementById('tarDate').value);
+        if (inputDate < new Date('2026-03-01') || inputDate > new Date('2026-05-31')) {
+            alert("🚨 偵測到違規日期！\n本競賽僅限 3 月至 5 月期間。"); return;
         }
-        const payload = { uid: liff.getContext().userId, invId: userProfile.amId, invName: userProfile.name, tarId: document.getElementById('tId').value, tarName: document.getElementById('tName').value, joinDate: document.getElementById('tDate').value, amount: document.getElementById('tAmt').value, imageData };
-        const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitReferral', payload }) });
-        alert((await res.json()).message);
-        liff.closeWindow();
+
+        btn.disabled = true; btn.innerText = "數據上傳中...";
+        const file = document.getElementById('tarImg').files[0];
+        let imageData = "";
+        if(file) { imageData = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); }); }
+        
+        const payload = { 
+            uid: state.uid, invId: document.getElementById('inv-select').value, invName: document.getElementById('inv-select').selectedOptions[0].text, 
+            tarId: document.getElementById('tarId').value, tarName: document.getElementById('tarName').value, date: document.getElementById('tarDate').value, 
+            amt: document.getElementById('tarAmt').value, imageData, type: "成功推薦" 
+        };
+        
+        try {
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitReferral', payload }) });
+            alert((await res.json()).message);
+            document.getElementById('refForm').reset(); btn.disabled = false; btn.innerText = "提交數據"; window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch(err) { alert("上傳失敗，請檢查網路。"); btn.disabled = false; btn.innerText = "提交數據"; }
+    };
+
+    document.getElementById('submitConsForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button'); btn.disabled = true; btn.innerText = "數據上傳中...";
+        const file = document.getElementById('cImg').files[0];
+        let imageData = "";
+        if(file) { imageData = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); }); }
+        
+        const payload = { 
+            uid: state.uid, invId: document.getElementById('cTarId').value, invName: document.getElementById('cTarName').value, 
+            tarId: document.getElementById('cTarId').value, tarName: document.getElementById('cTarName').value, date: new Date().toISOString().split('T')[0],
+            amt: document.getElementById('cAmt').value, imageData, type: "增加消費" 
+        };
+        
+        try {
+            const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitReferral', payload }) });
+            alert((await res.json()).message);
+            document.getElementById('submitConsForm').reset(); document.getElementById('cons-form').style.display = 'none';
+            btn.disabled = false; btn.innerText = "提交數據";
+            document.getElementById('loading').innerText = "同步最新金額..."; document.getElementById('loading').style.display = 'flex';
+            await refreshData(); document.getElementById('loading').style.display = 'none'; window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch(err) { alert("上傳失敗。"); btn.disabled = false; btn.innerText = "提交數據"; }
     };
 
     window.onload = init;
