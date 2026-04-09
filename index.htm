@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>CYP135 戰情中心</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #F4F5F7; margin: 0; padding: 0; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; background: #fff; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #1DB446; padding-bottom: 15px; }
+        .header h1 { margin: 0; font-size: 24px; color: #1DB446; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #1DB446; box-shadow: 0 0 5px rgba(29, 180, 70, 0.3); }
+        .btn-submit { width: 100%; background-color: #1DB446; color: white; border: none; padding: 14px; font-size: 18px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .btn-submit:active { background-color: #159338; }
+        .btn-submit:disabled { background-color: #cccccc; cursor: not-allowed; }
+        
+        #loadingSection { text-align: center; margin-top: 50px; font-size: 18px; color: #888; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: #1DB446; animation: spin 1s linear infinite; margin: 0 auto 15px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; display: flex; align-items: center;}
+        .user-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 20px; font-size: 14px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>CYP135 戰情中心</h1>
+    </div>
+
+    <div id="loadingSection">
+        <div class="spinner"></div>
+        <div id="loadingText">系統初始化中...</div>
+    </div>
+
+    <div id="registrationSection" style="display: none;">
+        <div class="section-title">👤 新兵註冊申請</div>
+        <form id="regForm">
+            <div class="form-group">
+                <label>安麗編號</label>
+                <input type="number" id="regAmId" placeholder="請輸入您的安麗編號" required>
+            </div>
+            <div class="form-group">
+                <label>完整姓名</label>
+                <input type="text" id="regName" placeholder="例如：王大明" required>
+            </div>
+            <div class="form-group">
+                <label>所屬雁群小組</label>
+                <select id="regGroup" required>
+                    <option value="" disabled selected>請選擇雁群...</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-submit" id="btnReg">確認註冊</button>
+        </form>
+    </div>
+
+    <div id="referralSection" style="display: none;">
+        <div class="section-title">🌟 成功推薦登記</div>
+        <div class="user-badge" id="userInfoBadge"></div>
+        <form id="refForm">
+            <div class="form-group">
+                <label>被推薦人編號</label>
+                <input type="number" id="refTarId" placeholder="請輸入被推薦人編號" required>
+            </div>
+            <div class="form-group">
+                <label>被推薦人姓名</label>
+                <input type="text" id="refTarName" placeholder="例如：李小華" required>
+            </div>
+            <div class="form-group">
+                <label>加入日期</label>
+                <input type="date" id="refJoinDate" required>
+            </div>
+            <div class="form-group">
+                <label>本次消費金額</label>
+                <input type="number" id="refAmount" placeholder="例如：3500" required>
+            </div>
+            <button type="submit" class="btn-submit" id="btnRef">送出審核</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // ⚠️ 系統設定 (請填入你的設定檔)
+    // ==========================================
+    const LIFF_ID = '2009757859-5wc8ZiNA'; 
+    const GAS_URL = 'YOUR_GAS_WEB_APP_URL'; // <--- 請換成剛才部署出來的 GAS 網址
+    
+    // 全域變數儲存使用者狀態
+    let currentUserUid = "";
+    let currentUserProfile = null;
+
+    // 系統初始化
+    async function initializeLiff() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
+            const profile = await liff.getProfile();
+            currentUserUid = profile.userId;
+            document.getElementById('loadingText').innerText = "讀取資料庫...";
+            fetchSystemData(currentUserUid);
+        } catch (err) {
+            alert("LIFF 初始化失敗：" + err.message);
+        }
+    }
+
+    // 向 GAS 後端抓取群組清單與使用者狀態
+    async function fetchSystemData(uid) {
+        try {
+            const response = await fetch(`${GAS_URL}?action=getSystemData&uid=${uid}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                currentUserProfile = result.data.profile;
+                
+                // 決定要顯示哪一個表單
+                document.getElementById('loadingSection').style.display = 'none';
+                
+                if (currentUserProfile) {
+                    // 已註冊：顯示推薦表單
+                    document.getElementById('userInfoBadge').innerText = `目前身分：${currentUserProfile.name} (${currentUserProfile.group})`;
+                    document.getElementById('referralSection').style.display = 'block';
+                } else {
+                    // 未註冊：顯示註冊表單，並填入群組選項
+                    const groupSelect = document.getElementById('regGroup');
+                    result.data.groups.forEach(g => {
+                        let opt = document.createElement('option');
+                        opt.value = g; opt.innerHTML = g;
+                        groupSelect.appendChild(opt);
+                    });
+                    document.getElementById('registrationSection').style.display = 'block';
+                }
+            } else {
+                alert("讀取資料失敗：" + result.message);
+            }
+        } catch (err) {
+            alert("連線後端發生錯誤，請檢查網路。");
+        }
+    }
+
+    // 提交註冊表單
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnReg');
+        btn.disabled = true; btn.innerText = "資料傳送中...";
+        
+        const payload = {
+            uid: currentUserUid,
+            amId: document.getElementById('regAmId').value,
+            name: document.getElementById('regName').value,
+            group: document.getElementById('regGroup').value
+        };
+
+        await sendDataToGas('submitRegistration', payload);
+    });
+
+    // 提交推薦表單
+    document.getElementById('refForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnRef');
+        btn.disabled = true; btn.innerText = "資料傳送中...";
+        
+        const payload = {
+            uid: currentUserUid,
+            invId: currentUserProfile.amId,
+            invName: currentUserProfile.name,
+            tarId: document.getElementById('refTarId').value,
+            tarName: document.getElementById('refTarName').value,
+            joinDate: document.getElementById('refJoinDate').value,
+            amount: document.getElementById('refAmount').value
+        };
+
+        await sendDataToGas('submitReferral', payload);
+    });
+
+    // 通用的 POST 傳輸函式 (利用 text/plain 規避 CORS)
+    async function sendDataToGas(action, payload) {
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: action, payload: payload })
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                liff.closeWindow(); // 成功後自動關閉視窗
+            } else {
+                alert("錯誤：" + result.message);
+                document.querySelectorAll('.btn-submit').forEach(b => { b.disabled = false; b.innerText = b.id === 'btnReg' ? '確認註冊' : '送出審核'; });
+            }
+        } catch (err) {
+            alert("傳送失敗，請重試。");
+            document.querySelectorAll('.btn-submit').forEach(b => { b.disabled = false; b.innerText = b.id === 'btnReg' ? '確認註冊' : '送出審核'; });
+        }
+    }
+
+    // 啟動系統
+    window.onload = initializeLiff;
+</script>
+</body>
+</html>
