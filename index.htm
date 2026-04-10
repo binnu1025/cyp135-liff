@@ -3,112 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>CYP135 推薦登錄</title>
+    <title>CYP135 推薦小幫手</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        /* =========================================
-           1. 全域與美學設定
-           ========================================= */
-        :root { --main-dark: #000000; --sub-gray: #BBBBBB; --bg-light: #F8F9FA; --border: #E0E0E0; --active-line: #000000; }
-        
+        :root { --main-dark: #000000; --sub-gray: #BBBBBB; --bg-light: #F8F9FA; --border: #E0E0E0; --accent: #007AFF; }
         body { background: var(--bg-light); color: var(--main-dark); font-family: -apple-system, "Noto Sans TC", sans-serif; margin: 0; line-height: 1.6; }
-        
-        /* 🚀 修正：極簡分頁標籤 (Tabs) - 選中黑、未選灰、有靈魂底線 */
         .tab-bar { display: flex; background: #fff; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
-        .tab { flex: 1; text-align: center; padding: 18px 0; font-size: 15px; color: var(--sub-gray); cursor: pointer; transition: 0.3s; position: relative; }
+        .tab { flex: 1; text-align: center; padding: 18px 0; font-size: 14px; color: var(--sub-gray); cursor: pointer; position: relative; }
         .tab.active { color: var(--main-dark); font-weight: bold; }
-        .tab.active::after { content: ""; position: absolute; bottom: 0; left: 25%; width: 50%; height: 2px; background: var(--active-line); }
-
-        .container { padding: 30px 20px; max-width: 600px; margin: 0 auto; }
-        h2 { font-weight: 700; font-size: 26px; margin-bottom: 10px; letter-spacing: -0.5px; }
-        .subtitle { font-size: 14px; color: #666; margin-bottom: 30px; border-left: 3px solid var(--main-dark); padding-left: 12px; }
-
-        /* 卡片與名單樣式 */
-        .group-header { font-size: 13px; color: #666; margin: 25px 0 10px 5px; font-weight: bold; display: flex; align-items: center; }
-        .group-header::before { content: "📍"; margin-right: 5px; }
-        
-        .card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
-        .card:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.07); }
-        .card-info { flex: 1; }
-        .card-name { font-weight: bold; font-size: 18px; }
-        .card-sub { font-size: 12px; color: #999; margin-top: 4px; }
-        
-        /* 🚀 新增：已達標卡片樣式 (灰階、不可點選) */
-        .card.done { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
-        
-        /* 🚀 新增：極簡三角形抽屜開關 */
-        .drawer-toggle { text-align: center; color: var(--sub-gray); font-size: 12px; margin-top: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .drawer-toggle span { margin-right: 5px; text-decoration: underline; }
-        
-        /* 表單元素 */
-        .group { margin-bottom: 25px; }
-        label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #333; }
-        input, select { width: 100%; border: none; border-bottom: 2px solid var(--border); background: transparent; padding: 10px 0; font-size: 17px; outline: none; border-radius: 0; box-sizing: border-box; }
-        input:focus { border-bottom: 2px solid var(--main-dark); }
-        
-        .btn { width: 100%; background: var(--main-dark); color: #fff; border: none; padding: 18px; border-radius: 8px; font-size: 17px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: 0.2s; }
-        .btn:disabled { background: #CCC; opacity: 0.7; }
-
-        /* 🚀 修正：嚴格門禁彈窗 (Modal) - 美化遮罩與樣式 */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
-        .modal-content { background: #fff; border-radius: 20px; padding: 35px; width: 100%; max-width: 320px; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
-        .modal-header { font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-        .modal-body { color: #666; font-size: 15px; line-height: 1.6; }
-
-        #loading { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #999; }
+        .tab.active::after { content: ""; position: absolute; bottom: 0; left: 25%; width: 50%; height: 2px; background: #000; }
+        .container { padding: 20px 20px 40px; max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .group-label { display: inline-block; background: #EEE; color: #666; font-size: 11px; padding: 2px 10px; border-radius: 20px; margin-bottom: 10px; font-weight: bold; }
+        .card { background: #fff; padding: 18px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(0,0,0,0.02); cursor: pointer; }
+        .btn { width: 100%; background: #000; color: #fff; border: none; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        #toast { display: none; position: fixed; top: 25px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 10px 20px; border-radius: 30px; z-index: 9999; text-align: center; min-width: 180px; }
+        #loading { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; color: #999; font-weight: bold; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-top: 15px; }
+        input, select { width: 100%; border: none; border-bottom: 1px solid #EEE; padding: 8px 0; font-size: 16px; outline: none; background: transparent; }
+        #image-viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 3000; flex-direction: column; }
+        #image-viewer img { max-width: 95%; max-height: 80vh; border-radius: 8px; object-fit: contain; }
+        .close-viewer-btn { color: #fff; margin-top: 20px; padding: 12px 30px; border: 1px solid #fff; border-radius: 30px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div id="loading">系統讀取中...</div>
+<div id="loading">數據讀取中...</div>
+<div id="toast"><div style="font-size:10px; opacity:0.7;">推薦競賽小幫手</div><div id="toast-msg"></div></div>
 
-<div id="gatekeeper" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">CYP135 推薦登錄</div>
-        <div class="modal-body">您尚未報名推薦競賽<br>請洽詢小組長完成報名。</div>
-        <button class="btn" style="margin-top:25px; padding:12px;" onclick="liff.closeWindow()">確定並離開</button>
-    </div>
+<div id="image-viewer" onclick="this.style.display='none'">
+    <img id="viewer-img" src="" alt="憑證照片" onclick="event.stopPropagation()">
+    <div class="close-viewer-btn">關閉視窗</div>
 </div>
 
 <div class="tab-bar">
-    <div class="tab active" id="t-ref" onclick="switchTab('ref')">成功推薦</div>
-    <div class="tab" id="t-cons" onclick="switchTab('cons')">增加消費</div>
+    <div class="tab active" onclick="switchTab('ref')" id="t-ref">成功推薦</div>
+    <div class="tab" onclick="switchTab('cons')" id="t-cons">增加消費</div>
     <div class="tab" id="t-adm" style="display:none" onclick="switchTab('adm')">會長專區</div>
 </div>
 
 <div class="container">
     <div id="ref" class="page">
-        <h2 id="ref-title">成功推薦登記</h2>
-        <div class="subtitle" id="ref-hint">載入中...</div>
+        <div class="group-label my-group-name">讀取中...</div>
+        <h2 style="margin-top:0;">成功推薦登記</h2>
         <form id="refForm">
-            <div class="group"><label>推薦人 (參賽夥伴)</label><select id="inv-select" required></select></div>
-            <div class="group"><label>新人編號</label><input type="number" id="tarId" placeholder="請輸入安麗編號" required></div>
-            <div class="group"><label>新人姓名</label><input type="text" id="tarName" placeholder="例如：王小明" required></div>
-            <div class="group"><label>加入日期</label><input type="date" id="tarDate" min="2026-03-01" max="2026-05-31" required></div>
-            <div class="group"><label>首購金額</label><input type="number" id="tarAmt" placeholder="本次消費金額" required></div>
-            <div class="group"><label>憑證上傳</label><input type="file" id="tarImg" accept="image/*"></div>
+            <label>推薦人</label><select id="inv-select" required></select>
+            <label>新人編號</label><input type="number" id="tarId" required>
+            <label>新人姓名</label><input type="text" id="tarName" required>
+            <label>日期</label><input type="date" id="tarDate" min="2026-03-01" required>
+            <label>金額</label><input type="number" id="tarAmt" required>
+            <label>憑證</label><input type="file" id="tarImg" accept="image/*">
             <button class="btn" type="submit" id="btn-ref">提交數據</button>
         </form>
     </div>
 
     <div id="cons" class="page" style="display:none">
-        <h2>增加消費金額</h2>
-        <div class="subtitle">僅顯示未滿 3000 元之夥伴 (依推薦人排序)</div>
-        
+        <div class="group-label my-group-name">讀取中...</div>
+        <h2 style="margin-top:0;">增加消費金額</h2>
         <div id="member-list"></div>
-        
-        <div class="drawer-toggle" onclick="toggleDoneList()">
-            <span>顯示已達標夥伴</span> <font id="drawer-icon">▼</font>
-        </div>
-        
-        <div id="done-list" style="display:none; margin-top:15px; border-top:1px solid #EEE; padding-top:10px;"></div>
-        
-        <div id="cons-form-area" style="display:none; margin-top:40px; border-top:1px dashed #DDD; padding-top:30px;">
-            <h3 id="selected-name" style="font-weight:700; margin-bottom: 20px;"></h3>
+        <div id="cons-form-area" style="display:none; margin-top:30px; border-top:1px dashed #DDD; padding-top:25px;">
+            <h3 id="selected-name"></h3>
             <form id="submitConsForm">
-                <input type="hidden" id="cTarId"><input type="hidden" id="cTarName">
-                <div class="group"><label>本次補填消費金額</label><input type="number" id="cAmt" required></div>
-                <div class="group"><label>消費憑證</label><input type="file" id="cImg" accept="image/*" required></div>
+                <input type="hidden" id="cTarId"><input type="hidden" id="cTarName"><input type="hidden" id="cInvId"><input type="hidden" id="cInvName">
+                <label>補填消費金額</label><input type="number" id="cAmt" required>
+                <label>憑證</label><input type="file" id="cImg" accept="image/*" required>
                 <button class="btn" type="submit" id="btn-cons">確認提交</button>
             </form>
         </div>
@@ -116,176 +73,189 @@
 
     <div id="adm" class="page" style="display:none">
         <h2>會長專區</h2>
-        <div class="tab-bar" style="position: relative; margin-bottom:20px; border:none; background:transparent;">
-            <div class="tab active" style="padding:10px" onclick="subTab('pending', this)">待審核</div>
-            <div class="tab" style="padding:10px" onclick="subTab('stats', this)">績效統計</div>
-            <div class="tab" style="padding:10px" onclick="subTab('roster', this)">參賽名單</div>
+        <div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid #EEE;">
+            <div id="st-pending" onclick="loadAdminContent('pending')" style="flex:1; text-align:center; padding:10px; cursor:pointer; font-weight:bold; border-bottom:2px solid #000;">待審核</div>
+            <div id="st-stats" onclick="loadAdminContent('stats')" style="flex:1; text-align:center; padding:10px; cursor:pointer; color:#999;">績效統計</div>
+            <div id="st-roster" onclick="loadAdminContent('roster')" style="flex:1; text-align:center; padding:10px; cursor:pointer; color:#999;">參賽名單</div>
         </div>
         <div id="admin-content"></div>
     </div>
 </div>
 
 <script>
-    // =========================================
-    // 2. 核心變數與初始化
-    // =========================================
-    const LIFF_ID = '2009757582-16dFzRuc'; // 務必填寫 LIFF ID
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxvtrH2tgdkysKGW5BR3Ok5XGuSnx_vmzRHSVsnA-M98OeM6-fQL-g6SmtsU9ymn6kp/exec'; // 務必更換為正式網址
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
+    let state = { uid: "" };
 
-    let state = { user: null, participants: [], newbies: [], isAdmin: false, uid: "" };
-    let isDoneListVisible = false; // 追蹤抽屜狀態
-
-    async function init() {
-        try {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            const profile = await liff.getProfile();
-            state.uid = profile.userId;
-            
-            await refreshData();
-            document.getElementById('loading').style.display = 'none';
-        } catch (err) { alert("系統初始化失敗，請重新整理。"); }
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').innerText = msg;
+        t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000);
     }
 
-    // =========================================
-    // 3. 資料處理與 UI 渲染
-    // =========================================
+    async function apiCall(action, payload = null) {
+        const url = payload ? GAS_URL : `${GAS_URL}?action=${action}&uid=${state.uid}`;
+        const opt = payload ? { method:'POST', body:JSON.stringify({action, payload}), redirect:'follow'} : {method:'GET'};
+        return await (await fetch(url, opt)).json();
+    }
+
     async function refreshData() {
         try {
-            const res = await fetch(`${GAS_URL}?action=getInitData&uid=${state.uid}`);
-            const result = await res.json();
-            
-            // 🚨 門禁第二關：若 GAS 回傳未註冊，開啟門禁彈窗
-            if (result.data && result.data.error === "未註冊") {
-                document.getElementById('gatekeeper').style.display = 'flex';
-                return;
+            const res = await apiCall('getInitData');
+            if (res.data && res.data.error) { showToast("未註冊身分"); return; }
+            if(res.data) {
+                document.querySelectorAll('.my-group-name').forEach(el => el.innerText = `所屬雁群：${res.data.myProfile.group}`);
+                document.getElementById('inv-select').innerHTML = res.data.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+                
+                // 修正重點：依照達標狀態渲染清單
+                document.getElementById('member-list').innerHTML = res.data.newbies.map(m => {
+                    const isReached = m.isReached;
+                    const cardStyle = isReached ? 'background:#F8F9FA; opacity:0.6; cursor:not-allowed;' : '';
+                    const clickEvent = isReached ? '' : `onclick="selectForCons('${m.tarId}','${m.tarName}','${m.invId}','${m.invName}')"`;
+                    const badge = isReached ? '<span style="color:#28a745; font-weight:bold;">✅ 已達標</span>' : '<span style="color:var(--accent); font-weight:bold;">補填 ➔</span>';
+                    
+                    return `
+                        <div class="card" style="${cardStyle}" ${clickEvent}>
+                            <div>
+                                <b>${m.tarName}</b> <small style="color:#999;">(${m.tarId})</small><br>
+                                <small>推薦人: ${m.invName} | 累計 $${m.spent}</small>
+                            </div>
+                            <div>${badge}</div>
+                        </div>
+                    `;
+                }).join('') || '<p style="text-align:center; padding:20px; color:#999;">本雁群目前尚無推薦名單</p>';
+                
+                if (res.data.isPresident) document.getElementById('t-adm').style.display = 'block';
             }
-
-            if (!result.success) { alert(`雲端錯誤: ${result.message}`); return; }
-
-            state.user = result.data.myProfile;
-            state.participants = result.data.participants;
-            state.newbies = result.data.newbies; // 這是已經排序好的所有資料
-            state.isAdmin = result.data.isPresident;
-            renderUI();
-        } catch(e) { console.error("資料刷新失敗", e); alert("網路連線異常。"); }
-    }
-
-    function renderUI() {
-        // A. 成功推薦頁面標題優化
-        document.getElementById('ref-title').innerText = `選擇「${state.user.group}」推薦者`;
-        document.getElementById('ref-hint').innerText = `管理小組：${state.user.group}`;
-        document.getElementById('inv-select').innerHTML = state.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-        
-        // B. 增加消費頁面：重組名單邏輯 (核心清單 vs 抽屜清單)
-        const mainList = document.getElementById('member-list');
-        const doneList = document.getElementById('done-list');
-        
-        mainList.innerHTML = '';
-        doneList.innerHTML = '';
-        
-        let currentInvMain = '';
-        let currentInvDone = '';
-
-        // 核心邏輯：依照「推薦人分組排序」，並將「已達標」丟進抽屜
-        state.newbies.forEach(m => {
-            const spentAmt = Number(m.spent);
-            const isDone = spentAmt >= 3000;
-
-            if (!isDone) {
-                // 1. 未達標者 -> 放進核心清單
-                if (m.invName !== currentInvMain) {
-                    currentInvMain = m.invName;
-                    const header = document.createElement('div');
-                    header.className = 'group-header';
-                    header.innerText = `推薦人：${currentInvMain}`;
-                    mainList.appendChild(header);
-                }
-                const card = createCard(m, false);
-                mainList.appendChild(card);
-            } else {
-                // 2. 已達標者 -> 放進抽屜清單
-                if (m.invName !== currentInvDone) {
-                    currentInvDone = m.invName;
-                    const header = document.createElement('div');
-                    header.className = 'group-header';
-                    header.innerText = `推薦人：${currentInvDone}`;
-                    header.style.color = "#BBB"; // 抽屜標頭顏色也淡化
-                    doneList.appendChild(header);
-                }
-                const card = createCard(m, true);
-                doneList.appendChild(card);
-            }
-        });
-
-        // C. 開啟會長專區 Tab
-        if (state.isAdmin) document.getElementById('t-adm').style.display = 'block';
-    }
-
-    // 通用卡片建立函式
-    function createCard(data, isDone) {
-        const card = document.createElement('div');
-        card.className = `card ${isDone ? 'done' : ''}`;
-        
-        // 未達標才能點擊
-        if (!isDone) {
-            card.onclick = () => selectForCons(data.tarId, data.tarName);
-        }
-
-        card.innerHTML = `
-            <div class="card-info">
-                <div class="card-name">${data.tarName}</div>
-                <div class="card-sub">累計：$${data.spent} ${isDone ? '(已達標 ✔️)' : ''}</div>
-            </div>
-            ${isDone ? '' : '<div style="color:var(--main-dark); font-weight:bold; font-size:14px; text-decoration:underline;">補填 ➔</div>'}
-        `;
-        return card;
-    }
-
-    // =========================================
-    // 4. UX 功能與頁面控制
-    // =========================================
-    
-    // 🚀 修正：極簡三角形抽屜開關邏輯 (▼ / ▲)
-    function toggleDoneList() {
-        const drawer = document.getElementById('done-list');
-        const icon = document.getElementById('drawer-icon');
-        const text = document.querySelector('.drawer-toggle span');
-        
-        isDoneListVisible = !isDoneListVisible;
-        
-        if (isDoneListVisible) {
-            drawer.style.display = 'block';
-            icon.innerText = '▲'; // 向上三角形
-            text.innerText = '隱藏已達標夥伴';
-            // 彈出時平滑捲動一下
-            window.scrollBy({ top: 150, behavior: 'smooth' });
-        } else {
-            drawer.style.display = 'none';
-            icon.innerText = '▼'; // 向下三角形
-            text.innerText = '顯示已達標夥伴';
-        }
-    }
-
-    function selectForCons(id, name) {
-        document.getElementById('cons-form-area').style.display = 'block';
-        document.getElementById('selected-name').innerText = `為「${name}」補填消費`;
-        document.getElementById('cTarId').value = id;
-        document.getElementById('cTarName').value = name;
-        // 捲動到表單位置
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        } catch(e) { console.error("初始化失敗", e); }
+        finally { document.getElementById('loading').style.display = 'none'; }
     }
 
     function switchTab(id) {
         document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        document.querySelectorAll('.tab-bar > .tab').forEach(t => t.classList.remove('active'));
         document.getElementById(id).style.display = 'block';
-        document.getElementById('t-' + id).classList.add('active');
-        // 隱藏可能開啟的消費表單
-        document.getElementById('cons-form-area').style.display = 'none';
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('t-'+id).classList.add('active');
+        if (id === 'adm') loadAdminContent('pending');
     }
 
-    window.onload = init;
+    function viewImage(url) {
+        if (!url) return;
+        document.getElementById('viewer-img').src = url;
+        document.getElementById('image-viewer').style.display = 'flex';
+    }
+
+    function selectForCons(tid, tname, iid, iname) {
+        document.getElementById('cons-form-area').style.display = 'block';
+        document.getElementById('selected-name').innerText = `為「${tname}」補填消費`;
+        document.getElementById('cTarId').value = tid; document.getElementById('cTarName').value = tname;
+        document.getElementById('cInvId').value = iid; document.getElementById('cInvName').value = iname;
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    async function loadAdminContent(type) {
+        const cont = document.getElementById('admin-content');
+        ['pending', 'stats', 'roster'].forEach(t => {
+            const el = document.getElementById('st-' + t);
+            if (t === type) {
+                el.style.color = '#000'; el.style.borderBottom = '2px solid #000'; el.style.fontWeight = 'bold';
+            } else {
+                el.style.color = '#999'; el.style.borderBottom = 'none'; el.style.fontWeight = 'normal';
+            }
+        });
+        cont.innerHTML = '<p style="text-align:center; padding:20px;">數據載入中...</p>';
+        try {
+            const res = await apiCall('getAdminDashboard');
+            if (!res.success) { cont.innerHTML = `<p style="text-align:center; padding:20px; color:red;">失敗：${res.message}</p>`; return; }
+            const d = res.data;
+            if (type === 'pending') {
+                if (!d.pending || d.pending.length === 0) {
+                    cont.innerHTML = '<div style="text-align:center; padding:50px 20px;"><div style="font-size:40px; margin-bottom:10px;">✨</div><p style="color:#999; font-size:14px;">目前尚無須審核的資料</p></div>';
+                    return;
+                }
+                cont.innerHTML = d.pending.map(g => `
+                    <div style="background:#000; color:#fff; padding:10px; border-radius:8px 8px 0 0;">[ ${g.groupName} ] 待審核</div>
+                    <div style="background:#fff; border:1px solid #EEE; padding:15px; margin-bottom:15px;">
+                        ${g.items.map(r => `
+                            <div style="border-bottom:1px solid #F5F5F5; padding-bottom:12px; margin-bottom:12px;">
+                                <p><b>${r.invName}</b> ➔ <b>${r.tarName}</b> ($${r.amt}) <br><small>類型: ${r.type}</small></p>
+                                ${(r.img && r.img.includes('http')) ? `<button style="margin-top:10px; background:#f0f0f0; border:1px solid #ddd; padding:8px; width:100%; border-radius:6px; font-size:13px;" onclick="viewImage('${r.img}')">📸 查看憑證照片</button>` : `<div style="margin:10px 0; font-size:12px; color:#999;">無憑證照片</div>`}
+                                <div style="display:flex; gap:10px; margin-top:10px;">
+                                    <button class="btn" style="padding:10px; font-size:13px;" onclick="processReview(${r.row},'approve')">核准</button>
+                                    <button class="btn" style="padding:10px; font-size:13px; background:#666;" onclick="processReview(${r.row},'reject')">退回</button>
+                                </div>
+                            </div>`).join('')}
+                    </div>`).join('');
+            } else if (type === 'stats') {
+                cont.innerHTML = d.stats.sort((a,b) => b.score - a.score).map(s => `
+                    <div class="card" style="display:block; cursor:default;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding-bottom:8px; margin-bottom:10px;">
+                            <span style="font-weight:bold; font-size:18px;">${s.groupName}</span>
+                            <span style="background:#000; color:#fff; padding:2px 12px; border-radius:20px; font-size:14px;">總分：${s.score}</span>
+                        </div>
+                        <div style="font-size:13px; color:#666;">
+                            ${s.details.length > 0 ? s.details.map(line => `<div>• ${line}</div>`).join('') : "暫無推薦紀錄"}
+                        </div>
+                    </div>`).join('');
+            } else if (type === 'roster') {
+                cont.innerHTML = d.stats.map(g => `
+                    <div style="margin-bottom:20px;">
+                        <div style="font-weight:bold; border-left:4px solid #000; padding-left:10px; margin-bottom:10px;">${g.groupName} (${g.members.length}人)</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                            ${g.members.map(m => `<span style="background:#fff; border:1px solid #DDD; padding:4px 12px; border-radius:15px; font-size:13px;">${m}</span>`).join('')}
+                        </div>
+                    </div>`).join('');
+            }
+        } catch (e) { cont.innerHTML = `<p style="text-align:center; padding:20px; color:red;">系統異常</p>`; }
+    }
+
+    async function processReview(row, action) {
+        if(!confirm("確定執行此審核操作？")) return;
+        try {
+            const res = await apiCall(action, { row });
+            showToast(res.message); loadAdminContent('pending');
+        } catch(e) { showToast("審核失敗"); }
+    }
+
+    window.onload = () => {
+        if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
+            state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; refreshData();
+        } else {
+            liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
+                if (!liff.isLoggedIn()) liff.login();
+                else liff.getProfile().then(p => { state.uid = p.userId; refreshData(); });
+            });
+        }
+    };
+
+    async function handleForm(e, type) {
+        e.preventDefault();
+        const btn = document.getElementById(type==='ref'?'btn-ref':'btn-cons');
+        btn.disabled = true; btn.innerText = "上傳中...";
+        const file = document.querySelector(`#${type==='ref'?'refForm':'submitConsForm'} input[type="file"]`).files[0];
+        let imageData = "";
+        if(file) imageData = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
+        
+        let payload = { 
+            uid: state.uid, 
+            invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value, 
+            invName: type==='ref' ? document.getElementById('inv-select').selectedOptions[0].text : document.getElementById('cInvName').value,
+            tarId: document.getElementById(type==='ref'?'tarId':'cTarId').value, 
+            tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value, 
+            date: type==='ref'?document.getElementById('tarDate').value : new Date().toISOString().split('T')[0], 
+            amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value, 
+            imageData, 
+            type: type==='ref'?"成功推薦":"增加消費" 
+        };
+
+        try {
+            const res = await apiCall('submitReferral', payload);
+            showToast(res.message); setTimeout(() => location.reload(), 1500);
+        } catch(err) {
+            showToast("上傳失敗"); btn.disabled = false; btn.innerText = "確認提交";
+        }
+    }
+    document.getElementById('refForm').onsubmit = (e) => handleForm(e, 'ref');
+    document.getElementById('submitConsForm').onsubmit = (e) => handleForm(e, 'cons');
 </script>
 </body>
 </html>
