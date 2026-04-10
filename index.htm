@@ -106,25 +106,30 @@
                 document.querySelectorAll('.my-group-name').forEach(el => el.innerText = `所屬雁群：${res.data.myProfile.group}`);
                 document.getElementById('inv-select').innerHTML = res.data.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
                 
-                // 修正重點：依照達標狀態渲染清單
                 document.getElementById('member-list').innerHTML = res.data.newbies.map(m => {
                     const isReached = m.isReached;
                     const cardStyle = isReached ? 'background:#F8F9FA; opacity:0.6; cursor:not-allowed;' : '';
                     const clickEvent = isReached ? '' : `onclick="selectForCons('${m.tarId}','${m.tarName}','${m.invId}','${m.invName}')"`;
                     const badge = isReached ? '<span style="color:#28a745; font-weight:bold;">✅ 已達標</span>' : '<span style="color:var(--accent); font-weight:bold;">補填 ➔</span>';
-                    
                     return `
                         <div class="card" style="${cardStyle}" ${clickEvent}>
-                            <div>
-                                <b>${m.tarName}</b> <small style="color:#999;">(${m.tarId})</small><br>
-                                <small>推薦人: ${m.invName} | 累計 $${m.spent}</small>
-                            </div>
+                            <div><b>${m.tarName}</b> <small style="color:#999;">(${m.tarId})</small><br><small>推薦人: ${m.invName} | 累計 $${m.spent}</small></div>
                             <div>${badge}</div>
-                        </div>
-                    `;
+                        </div>`;
                 }).join('') || '<p style="text-align:center; padding:20px; color:#999;">本雁群目前尚無推薦名單</p>';
                 
-                if (res.data.isPresident) document.getElementById('t-adm').style.display = 'block';
+                // 處理分頁跳轉
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetTab = urlParams.get('tab');
+
+                if (res.data.isPresident) {
+                    document.getElementById('t-adm').style.display = 'block';
+                    if (targetTab === 'adm') switchTab('adm');
+                } else if (targetTab === 'adm') {
+                    showToast("⚠️ 權限不足");
+                    switchTab('ref');
+                }
+                if (targetTab === 'cons') switchTab('cons');
             }
         } catch(e) { console.error("初始化失敗", e); }
         finally { document.getElementById('loading').style.display = 'none'; }
@@ -156,11 +161,8 @@
         const cont = document.getElementById('admin-content');
         ['pending', 'stats', 'roster'].forEach(t => {
             const el = document.getElementById('st-' + t);
-            if (t === type) {
-                el.style.color = '#000'; el.style.borderBottom = '2px solid #000'; el.style.fontWeight = 'bold';
-            } else {
-                el.style.color = '#999'; el.style.borderBottom = 'none'; el.style.fontWeight = 'normal';
-            }
+            if (t === type) { el.style.color = '#000'; el.style.borderBottom = '2px solid #000'; el.style.fontWeight = 'bold'; }
+            else { el.style.color = '#999'; el.style.borderBottom = 'none'; el.style.fontWeight = 'normal'; }
         });
         cont.innerHTML = '<p style="text-align:center; padding:20px;">數據載入中...</p>';
         try {
@@ -193,7 +195,7 @@
                             <span style="background:#000; color:#fff; padding:2px 12px; border-radius:20px; font-size:14px;">總分：${s.score}</span>
                         </div>
                         <div style="font-size:13px; color:#666;">
-                            ${s.details.length > 0 ? s.details.map(line => `<div>• ${line}</div>`).join('') : "暫無推薦紀錄"}
+                            ${s.details.length > 0 ? s.details.map(line => `<div>• ${line}</div>`).join('') : "暫無紀錄"}
                         </div>
                     </div>`).join('');
             } else if (type === 'roster') {
@@ -209,7 +211,7 @@
     }
 
     async function processReview(row, action) {
-        if(!confirm("確定執行此審核操作？")) return;
+        if(!confirm("確定執行此審核？")) return;
         try {
             const res = await apiCall(action, { row });
             showToast(res.message); loadAdminContent('pending');
@@ -217,7 +219,8 @@
     }
 
     window.onload = () => {
-        if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost") {
+        const isDev = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+        if (isDev) {
             state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; refreshData();
         } else {
             liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
@@ -234,7 +237,6 @@
         const file = document.querySelector(`#${type==='ref'?'refForm':'submitConsForm'} input[type="file"]`).files[0];
         let imageData = "";
         if(file) imageData = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
-        
         let payload = { 
             uid: state.uid, 
             invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value, 
@@ -246,7 +248,6 @@
             imageData, 
             type: type==='ref'?"成功推薦":"增加消費" 
         };
-
         try {
             const res = await apiCall('submitReferral', payload);
             showToast(res.message); setTimeout(() => location.reload(), 1500);
