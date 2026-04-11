@@ -35,13 +35,27 @@
     <div class="close-viewer-btn">關閉視窗</div>
 </div>
 
-<div class="tab-bar">
+<div class="tab-bar" id="main-tabs">
     <div class="tab active" onclick="switchTab('ref')" id="t-ref">成功推薦</div>
     <div class="tab" onclick="switchTab('cons')" id="t-cons">增加消費</div>
     <div class="tab" id="t-adm" style="display:none" onclick="switchTab('adm')">會長專區</div>
 </div>
 
 <div class="container">
+    <div id="reg-page" class="page" style="display:none">
+        <h2 style="margin-top:0;">身分確認 / 註冊報名</h2>
+        <p style="color:#666; font-size:14px; margin-bottom:20px;">偵測到您尚未綁定。若已請領導人代報名，請輸入「安麗編號」認領身分；若未報名，請直接填寫資料。</p>
+        <form id="regForm">
+            <label>安麗編號</label><input type="number" id="regAmId" placeholder="請輸入編號" required>
+            <label>姓名</label><input type="text" id="regName" placeholder="初次註冊請填寫">
+            <label>所屬雁群</label><select id="regGroup"></select>
+            <div style="display:flex; gap:10px; margin-top:30px;">
+                <button class="btn" type="button" onclick="handleIdentity('link')" style="background:#666;">身分認領</button>
+                <button class="btn" type="button" onclick="handleIdentity('reg')">直接註冊</button>
+            </div>
+        </form>
+    </div>
+
     <div id="ref" class="page">
         <div class="group-label my-group-name">讀取中...</div>
         <h2 style="margin-top:0;">成功推薦登記</h2>
@@ -85,6 +99,7 @@
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
     let state = { uid: "" };
+    let adminDataCache = null; // 🌟 效能優化核心：快取變數
 
     function showToast(msg) {
         const t = document.getElementById('toast');
@@ -101,8 +116,22 @@
     async function refreshData() {
         try {
             const res = await apiCall('getInitData');
-            if (res.data && res.data.error) { showToast("未註冊身分"); return; }
+            
+            // 處理未註冊/代報名情況
+            if (res.data && res.data.error === "未註冊") {
+                document.getElementById('reg-page').style.display = 'block';
+                document.getElementById('ref').style.display = 'none';
+                document.getElementById('main-tabs').style.display = 'none';
+                if(res.data.groupList) {
+                    document.getElementById('regGroup').innerHTML = '<option value="">請選擇雁群</option>' + 
+                        res.data.groupList.map(g => `<option value="${g}">${g}</option>`).join('');
+                }
+                return;
+            }
+
             if(res.data) {
+                document.getElementById('reg-page').style.display = 'none';
+                document.getElementById('main-tabs').style.display = 'flex';
                 document.querySelectorAll('.my-group-name').forEach(el => el.innerText = `所屬雁群：${res.data.myProfile.group}`);
                 document.getElementById('inv-select').innerHTML = res.data.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
                 
@@ -111,28 +140,34 @@
                     const cardStyle = isReached ? 'background:#F8F9FA; opacity:0.6; cursor:not-allowed;' : '';
                     const clickEvent = isReached ? '' : `onclick="selectForCons('${m.tarId}','${m.tarName}','${m.invId}','${m.invName}')"`;
                     const badge = isReached ? '<span style="color:#28a745; font-weight:bold;">✅ 已達標</span>' : '<span style="color:var(--accent); font-weight:bold;">補填 ➔</span>';
-                    return `
-                        <div class="card" style="${cardStyle}" ${clickEvent}>
-                            <div><b>${m.tarName}</b> <small style="color:#999;">(${m.tarId})</small><br><small>推薦人: ${m.invName} | 累計 $${m.spent}</small></div>
-                            <div>${badge}</div>
-                        </div>`;
+                    return `<div class="card" style="${cardStyle}" ${clickEvent}><div><b>${m.tarName}</b> <small>(${m.tarId})</small><br><small>累計 $${m.spent}</small></div><div>${badge}</div></div>`;
                 }).join('') || '<p style="text-align:center; padding:20px; color:#999;">本雁群目前尚無推薦名單</p>';
                 
-                // 處理分頁跳轉
+                if (res.data.isPresident) document.getElementById('t-adm').style.display = 'block';
+
                 const urlParams = new URLSearchParams(window.location.search);
                 const targetTab = urlParams.get('tab');
-
-                if (res.data.isPresident) {
-                    document.getElementById('t-adm').style.display = 'block';
-                    if (targetTab === 'adm') switchTab('adm');
-                } else if (targetTab === 'adm') {
-                    showToast("⚠️ 權限不足");
-                    switchTab('ref');
-                }
                 if (targetTab === 'cons') switchTab('cons');
+                else if (targetTab === 'adm') switchTab('adm');
+                else switchTab('ref');
             }
         } catch(e) { console.error("初始化失敗", e); }
         finally { document.getElementById('loading').style.display = 'none'; }
+    }
+
+    async function handleIdentity(action) {
+        const amId = document.getElementById('regAmId').value;
+        const name = document.getElementById('regName').value;
+        const group = document.getElementById('regGroup').value;
+        if(!amId) { alert("請填寫安麗編號"); return; }
+        document.getElementById('loading').style.display = 'flex';
+        try {
+            const apiName = (action === 'link') ? 'linkIdentity' : 'registerUser';
+            const res = await apiCall(apiName, { uid: state.uid, amId, name, group });
+            alert(res.message);
+            if(res.success) location.reload();
+            else document.getElementById('loading').style.display = 'none';
+        } catch(e) { alert("連線失敗"); document.getElementById('loading').style.display = 'none'; }
     }
 
     function switchTab(id) {
@@ -157,6 +192,7 @@
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
+    // 🌟 效能優化：會長專區載入邏輯
     async function loadAdminContent(type) {
         const cont = document.getElementById('admin-content');
         ['pending', 'stats', 'roster'].forEach(t => {
@@ -164,65 +200,71 @@
             if (t === type) { el.style.color = '#000'; el.style.borderBottom = '2px solid #000'; el.style.fontWeight = 'bold'; }
             else { el.style.color = '#999'; el.style.borderBottom = 'none'; el.style.fontWeight = 'normal'; }
         });
-        cont.innerHTML = '<p style="text-align:center; padding:20px;">數據載入中...</p>';
-        try {
-            const res = await apiCall('getAdminDashboard');
-            if (!res.success) { cont.innerHTML = `<p style="text-align:center; padding:20px; color:red;">失敗：${res.message}</p>`; return; }
-            const d = res.data;
-            if (type === 'pending') {
-                if (!d.pending || d.pending.length === 0) {
-                    cont.innerHTML = '<div style="text-align:center; padding:50px 20px;"><div style="font-size:40px; margin-bottom:10px;">✨</div><p style="color:#999; font-size:14px;">目前尚無須審核的資料</p></div>';
-                    return;
-                }
-                cont.innerHTML = d.pending.map(g => `
-                    <div style="background:#000; color:#fff; padding:10px; border-radius:8px 8px 0 0;">[ ${g.groupName} ] 待審核</div>
-                    <div style="background:#fff; border:1px solid #EEE; padding:15px; margin-bottom:15px;">
-                        ${g.items.map(r => `
-                            <div style="border-bottom:1px solid #F5F5F5; padding-bottom:12px; margin-bottom:12px;">
-                                <p><b>${r.invName}</b> ➔ <b>${r.tarName}</b> ($${r.amt}) <br><small>類型: ${r.type}</small></p>
-                                ${(r.img && r.img.includes('http')) ? `<button style="margin-top:10px; background:#f0f0f0; border:1px solid #ddd; padding:8px; width:100%; border-radius:6px; font-size:13px;" onclick="viewImage('${r.img}')">📸 查看憑證照片</button>` : `<div style="margin:10px 0; font-size:12px; color:#999;">無憑證照片</div>`}
-                                <div style="display:flex; gap:10px; margin-top:10px;">
-                                    <button class="btn" style="padding:10px; font-size:13px;" onclick="processReview(${r.row},'approve')">核准</button>
-                                    <button class="btn" style="padding:10px; font-size:13px; background:#666;" onclick="processReview(${r.row},'reject')">退回</button>
-                                </div>
-                            </div>`).join('')}
-                    </div>`).join('');
-            } else if (type === 'stats') {
-                cont.innerHTML = d.stats.sort((a,b) => b.score - a.score).map(s => `
-                    <div class="card" style="display:block; cursor:default;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding-bottom:8px; margin-bottom:10px;">
-                            <span style="font-weight:bold; font-size:18px;">${s.groupName}</span>
-                            <span style="background:#000; color:#fff; padding:2px 12px; border-radius:20px; font-size:14px;">總分：${s.score}</span>
-                        </div>
-                        <div style="font-size:13px; color:#666;">
-                            ${s.details.length > 0 ? s.details.map(line => `<div>• ${line}</div>`).join('') : "暫無紀錄"}
-                        </div>
-                    </div>`).join('');
-            } else if (type === 'roster') {
-                cont.innerHTML = d.stats.map(g => `
-                    <div style="margin-bottom:20px;">
-                        <div style="font-weight:bold; border-left:4px solid #000; padding-left:10px; margin-bottom:10px;">${g.groupName} (${g.members.length}人)</div>
-                        <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                            ${g.members.map(m => `<span style="background:#fff; border:1px solid #DDD; padding:4px 12px; border-radius:15px; font-size:13px;">${m}</span>`).join('')}
-                        </div>
-                    </div>`).join('');
+
+        if (!adminDataCache) {
+            cont.innerHTML = '<p style="text-align:center; padding:20px;">數據載入中...</p>';
+            try {
+                const res = await apiCall('getAdminDashboard');
+                if (!res.success) { cont.innerHTML = `<p style="text-align:center; padding:20px;">失敗：${res.message}</p>`; return; }
+                adminDataCache = res.data;
+            } catch (e) { cont.innerHTML = `<p style="text-align:center; padding:20px;">連線異常</p>`; return; }
+        }
+        renderAdminUI(type, adminDataCache);
+    }
+
+    // 🌟 效能優化：畫面渲染分流
+    function renderAdminUI(type, d) {
+        const cont = document.getElementById('admin-content');
+        if (type === 'pending') {
+            if (!d.pending || d.pending.length === 0) {
+                cont.innerHTML = '<p style="text-align:center; padding:50px; color:#999;">目前無須審核資料</p>'; return;
             }
-        } catch (e) { cont.innerHTML = `<p style="text-align:center; padding:20px; color:red;">系統異常</p>`; }
+            cont.innerHTML = d.pending.map(g => `
+                <div style="background:#000; color:#fff; padding:10px; border-radius:8px 8px 0 0;">[ ${g.groupName} ] 待審核</div>
+                <div style="background:#fff; border:1px solid #EEE; padding:15px; margin-bottom:15px;">
+                    ${g.items.map(r => `
+                        <div style="border-bottom:1px solid #F5F5F5; padding-bottom:12px; margin-bottom:12px;">
+                            <p><b>${r.invName}</b> ➔ <b>${r.tarName}</b> ($${r.amt})</p>
+                            ${(r.img && r.img.includes('http')) ? `<button class="btn" style="background:#f0f0f0; color:#000; padding:8px; margin-bottom:10px;" onclick="viewImage('${r.img}')">📸 查看憑證</button>` : ''}
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn" style="padding:10px; font-size:13px;" onclick="processReview(${r.row},'approve')">核准</button>
+                                <button class="btn" style="padding:10px; font-size:13px; background:#666;" onclick="processReview(${r.row},'reject')">退回</button>
+                            </div>
+                        </div>`).join('')}
+                </div>`).join('');
+        } else if (type === 'stats') {
+            cont.innerHTML = d.stats.sort((a,b) => b.score - a.score).map(s => `
+                <div class="card" style="display:block;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <b>${s.groupName}</b><span>總分：${s.score}</span>
+                    </div>
+                    <div style="font-size:12px; color:#666;">${s.details.join('<br>') || "暫無紀錄"}</div>
+                </div>`).join('');
+        } else if (type === 'roster') {
+            cont.innerHTML = d.stats.map(g => `
+                <div style="margin-bottom:20px;">
+                    <div style="font-weight:bold; border-left:4px solid #000; padding-left:10px;">${g.groupName} (${g.members.length}人)</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">
+                        ${g.members.map(m => `<span style="background:#fff; border:1px solid #DDD; padding:2px 10px; border-radius:15px; font-size:12px;">${m}</span>`).join('')}
+                    </div>
+                </div>`).join('');
+        }
     }
 
     async function processReview(row, action) {
-        if(!confirm("確定執行此審核？")) return;
+        if(!confirm("確定執行？")) return;
         try {
             const res = await apiCall(action, { row });
-            showToast(res.message); loadAdminContent('pending');
-        } catch(e) { showToast("審核失敗"); }
+            showToast(res.message);
+            adminDataCache = null; // 🌟 審核後清除快取，強迫下次重新讀取
+            loadAdminContent('pending');
+        } catch(e) { showToast("失敗"); }
     }
 
     window.onload = () => {
         const isDev = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
-        if (isDev) {
-            state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; refreshData();
-        } else {
+        if (isDev) { state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; refreshData(); }
+        else {
             liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
                 if (!liff.isLoggedIn()) liff.login();
                 else liff.getProfile().then(p => { state.uid = p.userId; refreshData(); });
@@ -238,22 +280,18 @@
         let imageData = "";
         if(file) imageData = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
         let payload = { 
-            uid: state.uid, 
-            invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value, 
+            uid: state.uid, invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value, 
             invName: type==='ref' ? document.getElementById('inv-select').selectedOptions[0].text : document.getElementById('cInvName').value,
             tarId: document.getElementById(type==='ref'?'tarId':'cTarId').value, 
             tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value, 
             date: type==='ref'?document.getElementById('tarDate').value : new Date().toISOString().split('T')[0], 
             amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value, 
-            imageData, 
-            type: type==='ref'?"成功推薦":"增加消費" 
+            imageData, type: type==='ref'?"成功推薦":"增加消費" 
         };
         try {
             const res = await apiCall('submitReferral', payload);
             showToast(res.message); setTimeout(() => location.reload(), 1500);
-        } catch(err) {
-            showToast("上傳失敗"); btn.disabled = false; btn.innerText = "確認提交";
-        }
+        } catch(err) { showToast("上傳失敗"); btn.disabled = false; btn.innerText = "確認提交"; }
     }
     document.getElementById('refForm').onsubmit = (e) => handleForm(e, 'ref');
     document.getElementById('submitConsForm').onsubmit = (e) => handleForm(e, 'cons');
