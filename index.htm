@@ -427,7 +427,7 @@
             <label>新人姓名</label><input type="text" id="tarName" required>
             <label>日期</label><input type="date" id="tarDate" min="2026-03-01" required>
             <label>金額</label><input type="number" id="tarAmt" required>
-            <label>憑證</label><input type="file" id="tarImg" accept="image/*">
+            <label>憑證</label><input type="file" id="tarImg" accept="image/*" required>
             <button class="btn" type="submit" id="btn-ref">提交數據</button>
         </form>
     </div>
@@ -805,11 +805,11 @@
     document.getElementById('submitConsForm').onsubmit = (e) => handleForm(e, 'cons');
 
     async function handleForm(e, type) {
-        e.preventDefault();
-        const btnId = type === 'ref' ? 'btn-ref' : 'btn-cons';
-        const btn = document.getElementById(btnId);
-        const originalText = btn.innerText;
-        btn.disabled = true; btn.innerText = "上傳中...";
+    e.preventDefault();
+    const btnId = type === 'ref' ? 'btn-ref' : 'btn-cons';
+    const btn = document.getElementById(btnId);
+    btn.disabled = true; btn.innerText = "上傳中..."; // 立刻禁用
+    const originalText = btn.innerText;
         const formId = type === 'ref' ? 'refForm' : 'submitConsForm';
         const file = document.querySelector(`#${formId} input[type="file"]`).files[0];
         let imageData = "";
