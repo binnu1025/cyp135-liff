@@ -43,8 +43,8 @@
 
 <div class="container">
     <div id="reg-page" class="page" style="display:none">
-        <h2 style="margin-top:0;">身分確認 / 註冊報名</h2>
-        <p style="color:#666; font-size:14px; margin-bottom:20px;">偵測到您尚未綁定。若已請領導人代報名，請輸入「安麗編號」認領身分；若未報名，請直接填寫資料。</p>
+        <h2 style="margin-top:0;">身分辨識 / 註冊報名</h2>
+        <p style="color:#666; font-size:14px; margin-bottom:20px;">偵測到您尚未綁定。若已報名，請輸入「安麗編號」認領身分；若未報名，請填寫資料。</p>
         <form id="regForm">
             <label>安麗編號</label><input type="number" id="regAmId" placeholder="請輸入編號" required>
             <label>姓名</label><input type="text" id="regName" placeholder="初次註冊請填寫">
@@ -99,7 +99,7 @@
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
     let state = { uid: "" };
-    let adminDataCache = null; // 🌟 效能優化核心：快取變數
+    let adminDataCache = null;
 
     function showToast(msg) {
         const t = document.getElementById('toast');
@@ -117,14 +117,18 @@
         try {
             const res = await apiCall('getInitData');
             
-            // 處理未註冊/代報名情況
+            // 🌟 科學判定：若後端回傳未註冊，顯示註冊頁並填充選單
             if (res.data && res.data.error === "未註冊") {
                 document.getElementById('reg-page').style.display = 'block';
                 document.getElementById('ref').style.display = 'none';
                 document.getElementById('main-tabs').style.display = 'none';
-                if(res.data.groupList) {
+                
+                // 核心修復：從 res.data.groupList 填充下拉選單
+                if (res.data.groupList && res.data.groupList.length > 0) {
                     document.getElementById('regGroup').innerHTML = '<option value="">請選擇雁群</option>' + 
                         res.data.groupList.map(g => `<option value="${g}">${g}</option>`).join('');
+                } else {
+                    document.getElementById('regGroup').innerHTML = '<option value="">(查無名單)</option>';
                 }
                 return;
             }
@@ -137,18 +141,16 @@
                 
                 document.getElementById('member-list').innerHTML = res.data.newbies.map(m => {
                     const isReached = m.isReached;
-                    const cardStyle = isReached ? 'background:#F8F9FA; opacity:0.6; cursor:not-allowed;' : '';
-                    const clickEvent = isReached ? '' : `onclick="selectForCons('${m.tarId}','${m.tarName}','${m.invId}','${m.invName}')"`;
-                    const badge = isReached ? '<span style="color:#28a745; font-weight:bold;">✅ 已達標</span>' : '<span style="color:var(--accent); font-weight:bold;">補填 ➔</span>';
-                    return `<div class="card" style="${cardStyle}" ${clickEvent}><div><b>${m.tarName}</b> <small>(${m.tarId})</small><br><small>累計 $${m.spent}</small></div><div>${badge}</div></div>`;
+                    const style = isReached ? 'background:#F8F9FA; opacity:0.6; cursor:not-allowed;' : '';
+                    const click = isReached ? '' : `onclick="selectForCons('${m.tarId}','${m.tarName}','${m.invId}','${m.invName}')"`;
+                    return `<div class="card" style="${style}" ${click}><div><b>${m.tarName}</b> <small>(${m.tarId})</small><br><small>累計 $${m.spent}</small></div><div style="color:var(--accent); font-weight:bold;">${isReached ? '✅ 已達標' : '補填 ➔'}</div></div>`;
                 }).join('') || '<p style="text-align:center; padding:20px; color:#999;">本雁群目前尚無推薦名單</p>';
                 
                 if (res.data.isPresident) document.getElementById('t-adm').style.display = 'block';
 
                 const urlParams = new URLSearchParams(window.location.search);
-                const targetTab = urlParams.get('tab');
-                if (targetTab === 'cons') switchTab('cons');
-                else if (targetTab === 'adm') switchTab('adm');
+                if (urlParams.get('tab') === 'cons') switchTab('cons');
+                else if (urlParams.get('tab') === 'adm') switchTab('adm');
                 else switchTab('ref');
             }
         } catch(e) { console.error("初始化失敗", e); }
@@ -192,7 +194,6 @@
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
-    // 🌟 效能優化：會長專區載入邏輯
     async function loadAdminContent(type) {
         const cont = document.getElementById('admin-content');
         ['pending', 'stats', 'roster'].forEach(t => {
@@ -200,7 +201,6 @@
             if (t === type) { el.style.color = '#000'; el.style.borderBottom = '2px solid #000'; el.style.fontWeight = 'bold'; }
             else { el.style.color = '#999'; el.style.borderBottom = 'none'; el.style.fontWeight = 'normal'; }
         });
-
         if (!adminDataCache) {
             cont.innerHTML = '<p style="text-align:center; padding:20px;">數據載入中...</p>';
             try {
@@ -212,12 +212,11 @@
         renderAdminUI(type, adminDataCache);
     }
 
-    // 🌟 效能優化：畫面渲染分流
     function renderAdminUI(type, d) {
         const cont = document.getElementById('admin-content');
         if (type === 'pending') {
             if (!d.pending || d.pending.length === 0) {
-                cont.innerHTML = '<p style="text-align:center; padding:50px; color:#999;">目前無須審核資料</p>'; return;
+                cont.innerHTML = '<p style="text-align:center; padding:50px; color:#999;">目前無待審核資料</p>'; return;
             }
             cont.innerHTML = d.pending.map(g => `
                 <div style="background:#000; color:#fff; padding:10px; border-radius:8px 8px 0 0;">[ ${g.groupName} ] 待審核</div>
@@ -233,12 +232,9 @@
                         </div>`).join('')}
                 </div>`).join('');
         } else if (type === 'stats') {
-            cont.innerHTML = d.stats.sort((a,b) => b.score - a.score).map(s => `
+            cont.innerHTML = d.stats.map(s => `
                 <div class="card" style="display:block;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <b>${s.groupName}</b><span>總分：${s.score}</span>
-                    </div>
-                    <div style="font-size:12px; color:#666;">${s.details.join('<br>') || "暫無紀錄"}</div>
+                    <b>${s.groupName}</b><span>總分：${s.score}</span>
                 </div>`).join('');
         } else if (type === 'roster') {
             cont.innerHTML = d.stats.map(g => `
@@ -256,7 +252,7 @@
         try {
             const res = await apiCall(action, { row });
             showToast(res.message);
-            adminDataCache = null; // 🌟 審核後清除快取，強迫下次重新讀取
+            adminDataCache = null;
             loadAdminContent('pending');
         } catch(e) { showToast("失敗"); }
     }
