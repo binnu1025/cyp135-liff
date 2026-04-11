@@ -499,7 +499,7 @@
                 document.getElementById('reg-page').style.display = 'none';
                 document.getElementById('main-tabs').style.display = 'flex';
                 document.getElementById('profile-tag').innerText = `所屬雁群：${d.myProfile.group || '多重授權'}`;
-                document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name} [${m.group}]</option>`).join('');
+                document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
                 
                 // 渲染增加消費名單（依雁群分組）
                 const groupedNewbies = d.newbies.reduce((acc, obj) => {
