@@ -21,7 +21,6 @@
             line-height: 1.6; 
         }
         
-        /* 頁籤列樣式 搭配104版*/
         .tab-bar { 
             display: flex; 
             background: #fff; 
@@ -60,7 +59,6 @@
             min-height: 100vh; 
         }
         
-        /* 🌟 大框框樣式 */
         .group-frame { 
             background: #FFFFFF; 
             border: 1px solid var(--border); 
@@ -92,21 +90,23 @@
             cursor: pointer; 
         }
         
-        /* 會長專區樣式 */
         .sub-tab-bar { 
             display: flex; 
             border-bottom: 1px solid #EEE; 
-            margin-bottom: 20px; 
+            margin-bottom: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .sub-tab { 
-            flex: 1; 
+            flex-shrink: 0;
             text-align: center; 
-            padding: 12px 0; 
-            font-size: 14px; 
+            padding: 12px 14px; 
+            font-size: 13px; 
             color: #999; 
             cursor: pointer; 
             position: relative; 
             font-weight: bold; 
+            white-space: nowrap;
         }
         .sub-tab.active { 
             color: #000; 
@@ -139,7 +139,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
 
-        /* 戰報樣式 */
         .perf-item { 
             background: #FCFCFD; 
             border: 1px solid #F0F0F0; 
@@ -218,6 +217,7 @@
             font-size: 16px; 
             outline: none; 
             background: transparent; 
+            box-sizing: border-box;
         }
         
         #image-viewer { 
@@ -235,6 +235,152 @@
             max-height: 80vh; 
             border-radius: 8px; 
             object-fit: contain; 
+        }
+
+        /* 績效統計卡片 */
+        .stats-grid {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #FF8F00;
+            line-height: 1.2;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* 參賽名單 雁群分組 */
+        .roster-group {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .roster-group-header {
+            background: #000;
+            color: #fff;
+            padding: 10px 16px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .roster-member {
+            padding: 11px 16px;
+            border-bottom: 1px solid #F5F5F5;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .roster-member:last-child {
+            border-bottom: none;
+        }
+        .roster-member-name {
+            font-weight: bold;
+        }
+        .roster-member-id {
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* 雁群統計 */
+        .yanqun-frame {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .yanqun-top {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #F0F0F0;
+        }
+        .yanqun-name {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            border-left: 4px solid #000;
+            padding-left: 10px;
+        }
+        .yanqun-meta {
+            display: flex;
+            gap: 16px;
+        }
+        .yanqun-meta-item {
+            text-align: center;
+        }
+        .yanqun-meta-num {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .yanqun-meta-label {
+            font-size: 11px;
+            color: #999;
+        }
+        .yanqun-toggle {
+            width: 100%;
+            background: #F8F9FA;
+            border: none;
+            border-top: 1px solid #F0F0F0;
+            padding: 12px 18px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .yanqun-toggle:hover {
+            background: #F0F0F0;
+        }
+        .yanqun-detail {
+            display: none;
+            padding: 0 18px 14px;
+            border-top: 1px solid #F5F5F5;
+        }
+        .yanqun-detail.open {
+            display: block;
+        }
+        .inv-group {
+            margin-top: 14px;
+        }
+        .inv-group-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #333;
+        }
+        .inv-recruit-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0 7px 12px;
+            border-left: 2px solid #EEE;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+        .inv-recruit-row.effective {
+            border-left-color: #2E7D32;
         }
     </style>
 </head>
@@ -256,6 +402,7 @@
 </div>
 
 <div class="container">
+    <!-- 註冊頁 -->
     <div id="reg-page" class="page" style="display:none">
         <h2 style="margin-top:0;">身分確認 / 註冊報名</h2>
         <p style="color:#666; font-size:14px; margin-bottom:20px;">偵測到您尚未綁定。若已報名，請輸入編號認領身分；若未報名，請填寫資料。</p>
@@ -270,6 +417,7 @@
         </form>
     </div>
 
+    <!-- 成功推薦 -->
     <div id="ref" class="page">
         <div id="profile-tag" style="font-size:12px; color:var(--accent); font-weight:bold; margin-bottom:10px;">讀取中...</div>
         <h2 style="margin-top:0;">成功推薦登記</h2>
@@ -284,6 +432,7 @@
         </form>
     </div>
 
+    <!-- 增加消費 -->
     <div id="cons" class="page" style="display:none">
         <h2 style="margin-top:0;">增加消費金額</h2>
         <div id="member-list"></div>
@@ -298,11 +447,13 @@
         </div>
     </div>
 
+    <!-- 雁群小組 -->
     <div id="group" class="page" style="display:none">
         <h2 style="margin-top:0;">雁群小組戰報</h2>
         <div id="group-perf-list"></div>
     </div>
 
+    <!-- 會長專區 -->
     <div id="adm" class="page" style="display:none">
         <h2 style="margin-top:0;">會長專區</h2>
         <div id="admin-content"></div>
@@ -350,7 +501,7 @@
                 document.getElementById('profile-tag').innerText = `所屬雁群：${d.myProfile.group || '多重授權'}`;
                 document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name} [${m.group}]</option>`).join('');
                 
-                // 渲染增加消費名單
+                // 渲染增加消費名單（依雁群分組）
                 const groupedNewbies = d.newbies.reduce((acc, obj) => {
                     const key = obj.group; 
                     if (!acc[key]) acc[key] = []; 
@@ -363,7 +514,6 @@
                     consHtml += `<div class="group-frame"><div class="group-header">${gName} 雁群</div>`;
                     consHtml += groupedNewbies[gName].map(m => {
                         const isReached = m.isReached;
-                        // 🌟 這裡使用 m.name，後端已修正補上此欄位
                         return `<div class="card" onclick="${isReached ? '' : `selectForCons('${m.tarId}','${m.name}','${m.invId}','${m.invName}')`}" style="${isReached ? 'opacity:0.5; background:#F0F0F0;' : ''}">
                             <div><b>${m.name || '未知'}</b> <small>(${m.tarId})</small><br><small>累計 $${m.spent}</small></div>
                             <div style="color:var(--accent); font-weight:bold;">${isReached ? '✅ 已達標' : '補填 ➔'}</div>
@@ -373,7 +523,7 @@
                 }
                 document.getElementById('member-list').innerHTML = consHtml || '<p style="text-align:center; color:#999; padding:20px;">目前無名單</p>';
 
-                // 渲染雁群小組
+                // 渲染雁群小組（原邏輯不變）
                 let groupHtml = d.groupPerf.map(g => {
                     let influencersHtml = g.influencers.map(inv => {
                         let recruitsHtml = Object.values(inv.recruits).map(r => `
@@ -385,7 +535,6 @@
                                 <div style="font-size:11px; color:#999; margin-top:4px;">📅 登記: ${r.recDate} ${r.effDate ? ` | 🏆 達標: ${r.effDate}` : `(累計 $${r.spent})`}</div>
                             </div>
                         `).join('');
-
                         return `
                             <div class="perf-item">
                                 <div class="perf-title-row">
@@ -396,7 +545,6 @@
                             </div>
                         `;
                     }).join('');
-
                     return `
                         <div class="group-frame">
                             <div class="group-header">${g.groupName} 小組</div>
@@ -456,7 +604,7 @@
 
     async function loadAdmin() {
         const cont = document.getElementById('admin-content');
-        cont.innerHTML = '<p style="text-align:center; padding:20px;">載入會長資料庫中...</p>';
+        cont.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">載入會長資料庫中...</p>';
         try {
             const res = await apiCall('getAdminDashboard');
             adminDataCache = res.data ? res.data : res;
@@ -469,14 +617,17 @@
     function renderAdminTab(tabName) {
         if(!adminDataCache) return;
         const cont = document.getElementById('admin-content');
+
         let html = `
             <div class="sub-tab-bar">
                 <div class="sub-tab ${tabName==='pending'?'active':''}" onclick="renderAdminTab('pending')">待審核</div>
                 <div class="sub-tab ${tabName==='stats'?'active':''}" onclick="renderAdminTab('stats')">績效統計</div>
+                <div class="sub-tab ${tabName==='yanqun'?'active':''}" onclick="renderAdminTab('yanqun')">雁群統計</div>
                 <div class="sub-tab ${tabName==='roster'?'active':''}" onclick="renderAdminTab('roster')">參賽名單</div>
             </div>
         `;
 
+        // ── 待審核 ──
         if (tabName === 'pending') {
             const pendingGroups = adminDataCache.pending || [];
             if(pendingGroups.length === 0) {
@@ -500,18 +651,105 @@
                     html += `</div>`;
                 });
             }
+
+        // ── 績效統計 ──
         } else if (tabName === 'stats') {
-             const allUsers = adminDataCache.allUsers || [];
-             html += `<div class="group-frame" style="background:#FFF9E6; border:1px solid #FFD54F;"><div class="group-header">📊 全教室大數據</div><div style="display:flex; justify-content:space-around; text-align:center; margin:15px 0;"><div><div style="font-size:32px; font-weight:bold; color:#FF8F00;">${allUsers.length}</div><div style="font-size:13px; color:#666;">總參賽人數</div></div></div></div>`;
+            const stats = adminDataCache.stats || { totalMembers: 0, totalReferrals: 0, totalEffective: 0 };
+            html += `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.totalMembers}</div>
+                        <div class="stat-label">總報名人數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.totalReferrals}</div>
+                        <div class="stat-label">總推薦筆數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.totalEffective}</div>
+                        <div class="stat-label">總達標人數</div>
+                    </div>
+                </div>
+            `;
+
+        // ── 雁群統計 ──
+        } else if (tabName === 'yanqun') {
+            const yanqunStats = adminDataCache.yanqunStats || [];
+            if(yanqunStats.length === 0) {
+                html += '<p style="text-align:center; padding:30px; color:#999;">目前無雁群資料</p>';
+            } else {
+                yanqunStats.forEach((g, gi) => {
+                    const detailId = `yanqun-detail-${gi}`;
+                    html += `
+                        <div class="yanqun-frame">
+                            <div class="yanqun-top">
+                                <div class="yanqun-name">${g.groupName} 小組</div>
+                                <div class="yanqun-meta">
+                                    <div class="yanqun-meta-item">
+                                        <div class="yanqun-meta-num">${g.totalPoints}</div>
+                                        <div class="yanqun-meta-label">總分</div>
+                                    </div>
+                                    <div class="yanqun-meta-item">
+                                        <div class="yanqun-meta-num">${g.totalReferrals}</div>
+                                        <div class="yanqun-meta-label">推薦人數</div>
+                                    </div>
+                                    <div class="yanqun-meta-item">
+                                        <div class="yanqun-meta-num" style="color:#2E7D32;">${g.effectiveCount}</div>
+                                        <div class="yanqun-meta-label">有效推薦</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="yanqun-toggle" onclick="toggleDetail('${detailId}', this)">
+                                <span>推薦明細</span><span>▼</span>
+                            </button>
+                            <div class="yanqun-detail" id="${detailId}">
+                                ${g.influencers.map(inv => `
+                                    <div class="inv-group">
+                                        <div class="inv-group-title">${inv.name} <span style="font-weight:normal; font-size:12px; color:#888;">（總分 ${inv.totalPoints}）</span></div>
+                                        ${inv.recruits.map(r => `
+                                            <div class="inv-recruit-row ${r.points === 2 ? 'effective' : ''}">
+                                                <span>└ 推薦 <b>${r.name}</b></span>
+                                                <span class="tag ${r.points === 2 ? 'tag-green' : 'tag-plus1'}">${r.points === 2 ? '有效推薦 +2' : '推薦 +1'}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+        // ── 參賽名單（依雁群分組）──
         } else if (tabName === 'roster') {
-             const allUsers = adminDataCache.allUsers || [];
-             html += `<div class="group-frame"><div class="group-header">👥 總參賽名單 (${allUsers.length}位)</div>`;
-             allUsers.forEach(u => {
-                 html += `<div style="padding:12px 0; border-bottom:1px solid #EEE; display:flex; justify-content:space-between; align-items:center;"><div><b>${u.name}</b> <span style="font-size:12px; color:#999;">(${u.amId})</span></div><div class="tag tag-plus1">${u.group}</div></div>`;
-             });
-             html += `</div>`;
+            const groupedRoster = adminDataCache.groupedRoster || {};
+            const totalCount = adminDataCache.allUsers ? adminDataCache.allUsers.length : 0;
+            html += `<div style="font-size:13px; color:#888; margin-bottom:14px;">共 ${totalCount} 位參賽者</div>`;
+            for (const gName in groupedRoster) {
+                const members = groupedRoster[gName];
+                html += `
+                    <div class="roster-group">
+                        <div class="roster-group-header">${gName} 雁群（${members.length} 位）</div>
+                        ${members.map(u => `
+                            <div class="roster-member">
+                                <span class="roster-member-name">${u.name}</span>
+                                <span class="roster-member-id">(${u.amId})</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
         }
+
         cont.innerHTML = html;
+    }
+
+    function toggleDetail(id, btn) {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.classList.toggle('open');
+        const arrow = btn.querySelector('span:last-child');
+        arrow.textContent = el.classList.contains('open') ? '▲' : '▼';
     }
 
     function viewImage(url) {
@@ -526,6 +764,28 @@
             showToast(res.message);
             setTimeout(() => { loadAdmin(); }, 1000); 
         } catch(e) { showToast("操作失敗"); }
+    }
+
+    // ── 圖片壓縮 ──
+    async function compressImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 1200;
+                    let w = img.width, h = img.height;
+                    if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+                    else if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve(canvas.toDataURL('image/jpeg', 0.75));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
     }
 
     window.onload = () => {
@@ -554,11 +814,7 @@
         const file = document.querySelector(`#${formId} input[type="file"]`).files[0];
         let imageData = "";
         if(file) {
-            imageData = await new Promise((resolve) => { 
-                const reader = new FileReader(); 
-                reader.onload = () => resolve(reader.result); 
-                reader.readAsDataURL(file); 
-            });
+            imageData = await compressImage(file);
         }
         const payload = { 
             uid: state.uid, 
