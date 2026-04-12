@@ -6,126 +6,143 @@
     <title>CYP135 推薦小幫手</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { 
-            --main-dark: #000; 
-            --sub-gray: #BBB; 
-            --bg-light: #F8F9FA; 
-            --border: #E0E0E0; 
-            --accent: #007AFF; 
+        :root {
+            --main-dark: #000;
+            --sub-gray: #BBB;
+            --bg-light: #F8F9FA;
+            --border: #E0E0E0;
+            --accent: #007AFF;
         }
-        body { 
-            background: var(--bg-light); 
-            color: var(--main-dark); 
-            font-family: -apple-system, "Noto Sans TC", sans-serif; 
-            margin: 0; 
-            line-height: 1.6; 
+        body {
+            background: var(--bg-light);
+            color: var(--main-dark);
+            font-family: -apple-system, "Noto Sans TC", sans-serif;
+            margin: 0;
+            line-height: 1.6;
         }
-        .tab-bar { 
-            display: flex; 
-            background: #fff; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-            border-bottom: 1px solid var(--border); 
+        .tab-bar {
+            display: flex;
+            background: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
         }
-        .tab { 
-            flex: 1; 
-            text-align: center; 
-            padding: 18px 0; 
-            font-size: 13px; 
-            color: var(--sub-gray); 
-            cursor: pointer; 
-            position: relative; 
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 18px 0;
+            font-size: 13px;
+            color: var(--sub-gray);
+            cursor: pointer;
+            position: relative;
         }
         .tab.active { color: var(--main-dark); font-weight: bold; }
-        .tab.active::after { 
-            content: ""; position: absolute; bottom: 0; left: 25%; width: 50%; height: 2px; background: #000; 
+        .tab.active::after {
+            content: ""; position: absolute; bottom: 0; left: 25%; width: 50%; height: 2px; background: #000;
         }
         .container { padding: 20px; max-width: 600px; margin: 0 auto; min-height: 100vh; }
-        .group-frame { 
-            background: #FFFFFF; border: 1px solid var(--border); border-radius: 16px; 
-            padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+        .group-frame {
+            background: #FFFFFF; border: 1px solid var(--border); border-radius: 16px;
+            padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
-        .group-header { 
-            font-size: 15px; font-weight: 800; color: #000; margin-bottom: 15px; 
-            display: flex; align-items: center; border-left: 4px solid #000; padding-left: 10px; 
+        .group-header {
+            font-size: 15px; font-weight: 800; color: #000; margin-bottom: 15px;
+            display: flex; align-items: center; border-left: 4px solid #000; padding-left: 10px;
         }
-        .card { 
-            background: #F9F9F9; padding: 15px; border-radius: 12px; margin-bottom: 12px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            border: 1px solid rgba(0,0,0,0.03); cursor: pointer; 
+        .card {
+            background: #F9F9F9; padding: 15px; border-radius: 12px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(0,0,0,0.03); cursor: pointer;
         }
-        .sub-tab-bar { 
+        .sub-tab-bar {
             display: flex; border-bottom: 1px solid #EEE; margin-bottom: 20px;
             overflow-x: auto; -webkit-overflow-scrolling: touch;
         }
-        .sub-tab { 
-            flex-shrink: 0; text-align: center; padding: 12px 14px; font-size: 13px; 
+        .sub-tab {
+            flex-shrink: 0; text-align: center; padding: 12px 14px; font-size: 13px;
             color: #999; cursor: pointer; position: relative; font-weight: bold; white-space: nowrap;
         }
         .sub-tab.active { color: #000; }
-        .sub-tab.active::after { 
-            content: ""; position: absolute; bottom: -1px; left: 10%; width: 80%; height: 3px; background: #000; 
+        .sub-tab.active::after {
+            content: ""; position: absolute; bottom: -1px; left: 10%; width: 80%; height: 3px; background: #000;
         }
-        .black-header { 
-            background: #000; color: #FFF; padding: 12px 15px; border-radius: 8px 8px 0 0; 
+        .black-header {
+            background: #000; color: #FFF; padding: 12px 15px; border-radius: 8px 8px 0 0;
             font-weight: bold; font-size: 14px; margin-top: 15px;
         }
-        .card-body { 
-            background: #FFF; border: 1px solid #EEE; border-top: none; border-radius: 0 0 8px 8px; 
+        .card-body {
+            background: #FFF; border: 1px solid #EEE; border-top: none; border-radius: 0 0 8px 8px;
             padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
         .perf-item { background: #FCFCFD; border: 1px solid #F0F0F0; border-radius: 12px; padding: 12px; margin-bottom: 15px; }
-        .perf-title-row { 
-            display: flex; justify-content: space-between; align-items: center; 
-            border-bottom: 1px solid #EEE; padding-bottom: 8px; margin-bottom: 10px; 
+        .perf-title-row {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #EEE; padding-bottom: 8px; margin-bottom: 10px;
         }
         .recruit-detail { font-size: 14px; padding: 8px 0; border-bottom: 1px dashed #EEE; }
         .recruit-detail:last-child { border-bottom: none; }
         .tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: bold; }
         .tag-plus1 { background: #EEE; color: #666; }
         .tag-plus2, .tag-green { background: #E8F5E9; color: #2E7D32; }
-        .btn { 
-            width: 100%; background: #000; color: #fff; border: none; padding: 16px; 
-            border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; 
+        .btn {
+            width: 100%; background: #000; color: #fff; border: none; padding: 16px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px;
         }
-        #toast { 
-            display: none; position: fixed; top: 25px; left: 50%; transform: translateX(-50%); 
-            background: rgba(0,0,0,0.85); color: #fff; padding: 10px 20px; 
-            border-radius: 30px; z-index: 9999; text-align: center; 
+        #toast {
+            display: none; position: fixed; top: 25px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: #fff; padding: 10px 20px;
+            border-radius: 30px; z-index: 9999; text-align: center;
         }
-        #loading { 
-            position: fixed; inset: 0; background: #fff; z-index: 9999; 
-            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #999; 
+        #loading {
+            position: fixed; inset: 0; background: #fff; z-index: 9999;
+            display: flex; align-items: center; justify-content: center; font-weight: bold; color: #999;
         }
         label { display: block; font-size: 12px; font-weight: bold; margin-top: 15px; }
-        input, select { 
-            width: 100%; border: none; border-bottom: 1px solid #EEE; padding: 8px 0; 
+        input, select {
+            width: 100%; border: none; border-bottom: 1px solid #EEE; padding: 8px 0;
             font-size: 16px; outline: none; background: transparent; box-sizing: border-box;
         }
-        #image-viewer { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; 
-            align-items: center; justify-content: center; z-index: 3000; flex-direction: column; 
+        #image-viewer {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none;
+            align-items: center; justify-content: center; z-index: 3000; flex-direction: column;
         }
         #image-viewer img { max-width: 95%; max-height: 80vh; border-radius: 8px; object-fit: contain; }
 
+        /* 個人資訊標籤 */
+        .profile-tags {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .profile-tag-item {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .profile-tag-divider {
+            font-size: 12px;
+            color: #CCC;
+        }
+
         /* 績效統計卡片 */
         .stats-grid { display: flex; gap: 12px; margin-bottom: 20px; }
-        .stat-card { 
-            flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 14px; 
+        .stat-card {
+            flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 14px;
             padding: 16px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .stat-number { font-size: 28px; font-weight: 800; color: #FF8F00; line-height: 1.2; }
         .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
 
         /* 參賽名單 */
-        .roster-group { 
-            background: #fff; border: 1px solid var(--border); border-radius: 14px; 
+        .roster-group {
+            background: #fff; border: 1px solid var(--border); border-radius: 14px;
             margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
         .roster-group-header { background: #000; color: #fff; padding: 10px 16px; font-weight: bold; font-size: 14px; }
-        .roster-member { 
-            padding: 11px 16px; border-bottom: 1px solid #F5F5F5; font-size: 14px; 
+        .roster-member {
+            padding: 11px 16px; border-bottom: 1px solid #F5F5F5; font-size: 14px;
             display: flex; align-items: center; gap: 8px;
         }
         .roster-member:last-child { border-bottom: none; }
@@ -133,8 +150,8 @@
         .roster-member-id { font-size: 12px; color: #999; }
 
         /* 雁群統計 */
-        .yanqun-frame { 
-            background: #fff; border: 1px solid var(--border); border-radius: 16px; 
+        .yanqun-frame {
+            background: #fff; border: 1px solid var(--border); border-radius: 16px;
             margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
         .yanqun-top { padding: 16px 18px 12px; border-bottom: 1px solid #F0F0F0; }
@@ -143,9 +160,9 @@
         .yanqun-meta-item { text-align: center; }
         .yanqun-meta-num { font-size: 22px; font-weight: 800; color: var(--accent); }
         .yanqun-meta-label { font-size: 11px; color: #999; }
-        .yanqun-toggle { 
-            width: 100%; background: #F8F9FA; border: none; border-top: 1px solid #F0F0F0; 
-            padding: 12px 18px; text-align: left; font-size: 13px; font-weight: bold; color: #555; 
+        .yanqun-toggle {
+            width: 100%; background: #F8F9FA; border: none; border-top: 1px solid #F0F0F0;
+            padding: 12px 18px; text-align: left; font-size: 13px; font-weight: bold; color: #555;
             cursor: pointer; display: flex; justify-content: space-between; align-items: center;
         }
         .yanqun-toggle:hover { background: #F0F0F0; }
@@ -153,7 +170,7 @@
         .yanqun-detail.open { display: block; }
         .inv-group { margin-top: 14px; }
         .inv-group-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #333; }
-        .inv-recruit-row { 
+        .inv-recruit-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 7px 0 7px 12px; border-left: 2px solid #EEE; margin-bottom: 4px; font-size: 13px;
         }
@@ -202,7 +219,11 @@
 
     <!-- 成功推薦 -->
     <div id="ref" class="page">
-        <div id="profile-tag" style="font-size:12px; color:var(--accent); font-weight:bold; margin-bottom:10px;">讀取中...</div>
+        <div class="profile-tags" id="profile-tags">
+            <span class="profile-tag-item" id="profile-classroom"></span>
+            <span class="profile-tag-divider" id="profile-divider" style="display:none">｜</span>
+            <span class="profile-tag-item" id="profile-group"></span>
+        </div>
         <h2 style="margin-top:0;">成功推薦登記</h2>
         <form id="refForm">
             <label>推薦人</label><select id="inv-select" required></select>
@@ -249,20 +270,20 @@
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
     let state = { uid: "" };
-    let adminDataCache = null; 
+    let adminDataCache = null;
 
     function showToast(msg) {
         document.getElementById('toast-msg').innerText = msg;
         const t = document.getElementById('toast');
-        t.style.display = 'block'; 
+        t.style.display = 'block';
         setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
     async function apiCall(action, payload = null) {
         const url = payload ? GAS_URL : `${GAS_URL}?action=${action}&uid=${state.uid}`;
-        const opt = payload ? { 
-            method: 'POST', 
-            body: JSON.stringify({action, payload}), 
+        const opt = payload ? {
+            method: 'POST',
+            body: JSON.stringify({action, payload}),
             redirect: 'follow'
         } : { method: 'GET' };
         const response = await fetch(url, opt);
@@ -283,14 +304,37 @@
                 const d = res.data;
                 document.getElementById('reg-page').style.display = 'none';
                 document.getElementById('main-tabs').style.display = 'flex';
-                document.getElementById('profile-tag').innerText = `所屬雁群：${d.myProfile.group || '多重授權'}`;
+
+                // 顯示所屬教室 + 所屬雁群
+                const classroom = d.myProfile.classroom || "";
+                const group = d.myProfile.group || "";
+                const classroomEl = document.getElementById('profile-classroom');
+                const groupEl = document.getElementById('profile-group');
+                const dividerEl = document.getElementById('profile-divider');
+
+                if (classroom) {
+                    classroomEl.innerText = `所屬教室：${classroom}`;
+                    classroomEl.style.display = 'inline';
+                } else {
+                    classroomEl.style.display = 'none';
+                }
+
+                if (group) {
+                    groupEl.innerText = `所屬雁群：${group === '' ? '多重授權' : group}`;
+                    groupEl.style.display = 'inline';
+                } else {
+                    groupEl.style.display = 'none';
+                }
+
+                dividerEl.style.display = (classroom && group) ? 'inline' : 'none';
+
                 document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-                
+
                 // 渲染增加消費名單
                 const groupedNewbies = d.newbies.reduce((acc, obj) => {
-                    const key = obj.group; 
-                    if (!acc[key]) acc[key] = []; 
-                    acc[key].push(obj); 
+                    const key = obj.group;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(obj);
                     return acc;
                 }, {});
                 let consHtml = "";
@@ -340,11 +384,11 @@
 
                 if (d.isPresident) document.getElementById('t-adm').style.display = 'block';
             }
-        } catch(e) { 
-            console.error("Refresh Error:", e); 
+        } catch(e) {
+            console.error("Refresh Error:", e);
             showToast("數據載入異常，請重整");
-        } finally { 
-            document.getElementById('loading').style.display = 'none'; 
+        } finally {
+            document.getElementById('loading').style.display = 'none';
         }
     }
 
@@ -360,9 +404,9 @@
             alert(res.message);
             if(res.success) location.reload();
             else document.getElementById('loading').style.display = 'none';
-        } catch(e) { 
-            alert("連線失敗"); 
-            document.getElementById('loading').style.display = 'none'; 
+        } catch(e) {
+            alert("連線失敗");
+            document.getElementById('loading').style.display = 'none';
         }
     }
 
@@ -379,9 +423,9 @@
     function selectForCons(tid, tname, iid, iname) {
         document.getElementById('cons-form-area').style.display = 'block';
         document.getElementById('selected-name').innerText = `為「${tname}」補填消費紀錄`;
-        document.getElementById('cTarId').value = tid; 
+        document.getElementById('cTarId').value = tid;
         document.getElementById('cTarName').value = tname;
-        document.getElementById('cInvId').value = iid; 
+        document.getElementById('cInvId').value = iid;
         document.getElementById('cInvName').value = iname;
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
@@ -392,7 +436,7 @@
         try {
             const res = await apiCall('getAdminDashboard');
             adminDataCache = res.data ? res.data : res;
-            renderAdminTab('pending'); 
+            renderAdminTab('pending');
         } catch(e) {
             cont.innerHTML = '<p style="text-align:center; padding:30px; color:red;">連線失敗</p>';
         }
@@ -536,10 +580,10 @@
         try {
             const res = await apiCall(action, { row });
             showToast(res.message);
-            setTimeout(() => { 
+            setTimeout(() => {
                 loadAdmin();
-                refreshData(); // 審核後同步更新增加消費名單
-            }, 1000); 
+                refreshData();
+            }, 1000);
         } catch(e) { showToast("操作失敗"); }
     }
 
@@ -589,15 +633,15 @@
             const hash = window.location.hash.replace('#', '');
             if (hash && ['ref', 'cons', 'group', 'adm'].includes(hash)) switchTab(hash);
         };
-        if (isDev) { 
-            state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; 
-            refreshData().then(goToHash); 
+        if (isDev) {
+            state.uid = "Uc374b29901f192ad5e8e0daf604bd238";
+            refreshData().then(goToHash);
         } else {
             liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
                 if (!liff.isLoggedIn()) liff.login();
-                else liff.getProfile().then(p => { 
-                    state.uid = p.userId; 
-                    refreshData().then(goToHash); 
+                else liff.getProfile().then(p => {
+                    state.uid = p.userId;
+                    refreshData().then(goToHash);
                 });
             }).catch(err => console.error(err));
         }
@@ -618,22 +662,22 @@
         if(file) {
             imageData = await compressImage(file);
         }
-        const payload = { 
-            uid: state.uid, 
-            invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value, 
+        const payload = {
+            uid: state.uid,
+            invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value,
             invName: type==='ref' ? document.getElementById('inv-select').selectedOptions[0].text : document.getElementById('cInvName').value,
-            tarId: document.getElementById(type==='ref'?'tarId':'cTarId').value, 
-            tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value, 
-            date: type==='ref' ? document.getElementById('tarDate').value : new Date().toISOString().split('T')[0], 
-            amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value, 
-            imageData: imageData, 
-            type: type==='ref' ? "成功推薦" : "增加消費" 
+            tarId: document.getElementById(type==='ref'?'tarId':'cTarId').value,
+            tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value,
+            date: type==='ref' ? document.getElementById('tarDate').value : new Date().toISOString().split('T')[0],
+            amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value,
+            imageData: imageData,
+            type: type==='ref' ? "成功推薦" : "增加消費"
         };
         try {
             const res = await apiCall('submitReferral', payload);
-            showToast(res.message); 
+            showToast(res.message);
             setTimeout(() => { location.reload(); }, 1500);
-        } catch(err) { 
+        } catch(err) {
             showToast("提交失敗"); btn.disabled = false; btn.innerText = originalText;
         }
     }
