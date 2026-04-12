@@ -788,17 +788,24 @@
         });
     }
 
-    window.onload = () => {
-        const isDev = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
-        if (isDev) { 
-            state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; 
-            refreshData(); 
-        } else {
-            liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
-                if (!liff.isLoggedIn()) liff.login();
-                else liff.getProfile().then(p => { state.uid = p.userId; refreshData(); });
-            }).catch(err => console.error(err));
-        }
+   window.onload = () => {
+    const isDev = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+    const goToHash = () => {
+        const hash = window.location.hash.replace('#', '');
+        if (hash && ['ref', 'cons', 'group', 'adm'].includes(hash)) switchTab(hash);
+    };
+    if (isDev) { 
+        state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; 
+        refreshData().then(goToHash); 
+    } else {
+        liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
+            if (!liff.isLoggedIn()) liff.login();
+            else liff.getProfile().then(p => { 
+                state.uid = p.userId; 
+                refreshData().then(goToHash); 
+            });
+        }).catch(err => console.error(err));
+    }
     };
 
     document.getElementById('refForm').onsubmit = (e) => handleForm(e, 'ref');
