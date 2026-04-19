@@ -109,7 +109,6 @@
         }
         #image-viewer img { max-width: 95%; max-height: 80vh; border-radius: 8px; object-fit: contain; }
 
-        /* 個人資訊標籤 */
         .profile-tags {
             display: flex;
             gap: 8px;
@@ -126,7 +125,6 @@
             color: #CCC;
         }
 
-        /* 績效統計卡片 */
         .stats-grid { display: flex; gap: 12px; margin-bottom: 20px; }
         .stat-card {
             flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 14px;
@@ -135,7 +133,6 @@
         .stat-number { font-size: 28px; font-weight: 800; color: #FF8F00; line-height: 1.2; }
         .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
 
-        /* 參賽名單 */
         .roster-group {
             background: #fff; border: 1px solid var(--border); border-radius: 14px;
             margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
@@ -149,7 +146,6 @@
         .roster-member-name { font-weight: bold; }
         .roster-member-id { font-size: 12px; color: #999; }
 
-        /* 雁群統計 */
         .yanqun-frame {
             background: #fff; border: 1px solid var(--border); border-radius: 16px;
             margin-bottom: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
@@ -176,12 +172,74 @@
         }
         .inv-recruit-row.effective { border-left-color: #2E7D32; }
 
-        /* 防呆警示 */
         .field-warn {
             font-size: 12px; color: #D32F2F; margin-top: 5px;
             padding: 6px 10px; background: #FFEBEE; border-radius: 6px; display: none;
         }
         .field-warn.show { display: block; }
+
+        /* ===== 多圖預覽區樣式 ===== */
+        .img-preview-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .img-preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #DDD;
+            cursor: pointer;
+        }
+        .img-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: none;
+            padding: 0;
+        }
+        .img-preview-remove {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0;
+        }
+        .img-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+        /* 自訂 file input 外觀 */
+        .file-input-wrap {
+            margin-top: 10px;
+        }
+        .file-input-btn {
+            display: inline-block;
+            padding: 8px 18px;
+            background: #F0F0F0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #333;
+            border: 1px dashed #CCC;
+        }
+        input[type="file"] {
+            display: none; /* 隱藏原生 input，改用按鈕觸發 */
+        }
     </style>
 </head>
 <body>
@@ -233,7 +291,18 @@
             <label>新人姓名</label><input type="text" id="tarName" required>
             <label>日期</label><input type="date" id="tarDate" min="2026-03-01" required>
             <label>金額</label><input type="number" id="tarAmt" required>
-            <label>憑證</label><input type="file" id="tarImg" accept="image/*" required>
+
+            <!-- ★ 修改1：成功推薦的圖片欄位，改為多張 -->
+            <label>憑證（可選多張）</label>
+            <div class="file-input-wrap">
+                <label class="file-input-btn" for="tarImg">📷 選擇圖片</label>
+                <!-- multiple 讓使用者可以一次選多張 -->
+                <input type="file" id="tarImg" accept="image/*" multiple>
+            </div>
+            <div class="img-hint">可選多張，點縮圖可放大，點 ✕ 可移除</div>
+            <!-- 預覽區塊 -->
+            <div class="img-preview-area" id="tarImg-preview"></div>
+
             <button class="btn" type="submit" id="btn-ref">提交數據</button>
         </form>
     </div>
@@ -248,7 +317,18 @@
                 <input type="hidden" id="cTarId"><input type="hidden" id="cTarName">
                 <input type="hidden" id="cInvId"><input type="hidden" id="cInvName">
                 <label>補填消費金額</label><input type="number" id="cAmt" required>
-                <label>憑證</label><input type="file" id="cImg" accept="image/*" required>
+
+                <!-- ★ 修改2：增加消費的圖片欄位，改為多張 -->
+                <label>憑證（可選多張）</label>
+                <div class="file-input-wrap">
+                    <label class="file-input-btn" for="cImg">📷 選擇圖片</label>
+                    <!-- multiple 讓使用者可以一次選多張 -->
+                    <input type="file" id="cImg" accept="image/*" multiple>
+                </div>
+                <div class="img-hint">可選多張，點縮圖可放大，點 ✕ 可移除</div>
+                <!-- 預覽區塊 -->
+                <div class="img-preview-area" id="cImg-preview"></div>
+
                 <button class="btn" type="submit" id="btn-cons">確認提交</button>
             </form>
         </div>
@@ -272,6 +352,12 @@
     let state = { uid: "" };
     let adminDataCache = null;
 
+    // ★ 修改3：用兩個陣列分別儲存「推薦」和「增加消費」已選的 File 物件
+    let selectedFiles = {
+        ref: [],   // 成功推薦的圖片們
+        cons: []   // 增加消費的圖片們
+    };
+
     function showToast(msg) {
         document.getElementById('toast-msg').innerText = msg;
         const t = document.getElementById('toast');
@@ -290,6 +376,74 @@
         return response.json();
     }
 
+    // ★ 修改4：設定圖片選擇事件，支援多次選圖累加（不覆蓋）
+    function setupImageInput(inputId, previewId, fileKey) {
+        const input = document.getElementById(inputId);
+        const previewArea = document.getElementById(previewId);
+
+        input.addEventListener('change', () => {
+            const newFiles = Array.from(input.files);
+
+            // 每次選完後限制總數不超過 5 張
+            const remaining = 5 - selectedFiles[fileKey].length;
+            if (remaining <= 0) {
+                showToast('最多只能上傳 5 張圖片');
+                input.value = '';
+                return;
+            }
+
+            const toAdd = newFiles.slice(0, remaining);
+            if (newFiles.length > remaining) {
+                showToast(`已達上限，只加入前 ${remaining} 張`);
+            }
+
+            toAdd.forEach(file => {
+                selectedFiles[fileKey].push(file);
+                addPreviewItem(file, previewArea, fileKey);
+            });
+
+            // 清空 input value，讓使用者可以重複選同一張
+            input.value = '';
+        });
+    }
+
+    // ★ 修改5：產生單張圖片的縮圖預覽，並綁定移除和放大功能
+    function addPreviewItem(file, previewArea, fileKey) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            const index = selectedFiles[fileKey].length - 1; // 這張在陣列中的位置
+
+            const item = document.createElement('div');
+            item.className = 'img-preview-item';
+            item.dataset.index = index;
+
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.onclick = () => viewImage(dataUrl); // 點縮圖可放大
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'img-preview-remove';
+            removeBtn.innerText = '✕';
+            removeBtn.type = 'button';
+            removeBtn.onclick = (ev) => {
+                ev.stopPropagation();
+                // 從陣列移除這張
+                const idx = parseInt(item.dataset.index);
+                selectedFiles[fileKey].splice(idx, 1);
+                // 更新後面每張的 index
+                const allItems = previewArea.querySelectorAll('.img-preview-item');
+                allItems.forEach((el, i) => { if (i > idx) el.dataset.index = i - 1; });
+                item.remove();
+            };
+
+            item.appendChild(img);
+            item.appendChild(removeBtn);
+            previewArea.appendChild(item);
+        };
+        reader.readAsDataURL(file);
+    }
+
     async function refreshData() {
         try {
             const res = await apiCall('getInitData');
@@ -305,7 +459,6 @@
                 document.getElementById('reg-page').style.display = 'none';
                 document.getElementById('main-tabs').style.display = 'flex';
 
-                // 顯示所屬教室 + 所屬雁群
                 const classroom = d.myProfile.classroom || "";
                 const group = d.myProfile.group || "";
                 const classroomEl = document.getElementById('profile-classroom');
@@ -330,7 +483,6 @@
 
                 document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
 
-                // 渲染增加消費名單
                 const groupedNewbies = d.newbies.reduce((acc, obj) => {
                     const key = obj.group;
                     if (!acc[key]) acc[key] = [];
@@ -351,7 +503,6 @@
                 }
                 document.getElementById('member-list').innerHTML = consHtml || '<p style="text-align:center; color:#999; padding:20px;">目前無名單</p>';
 
-                // 渲染雁群小組
                 let groupHtml = d.groupPerf.map(g => {
                     let influencersHtml = g.influencers.map(inv => {
                         let recruitsHtml = Object.values(inv.recruits).map(r => `
@@ -587,7 +738,6 @@
         } catch(e) { showToast("操作失敗"); }
     }
 
-    // ── 新人編號防呆檢查 ──
     async function checkTarId() {
         const tarId = document.getElementById('tarId').value.trim();
         const warn = document.getElementById('tarId-warn');
@@ -605,7 +755,6 @@
         }
     }
 
-    // ── 圖片壓縮 ──
     async function compressImage(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -628,6 +777,10 @@
     }
 
     window.onload = () => {
+        // ★ 修改6：頁面載入後，綁定兩個 input 的多圖選取事件
+        setupImageInput('tarImg', 'tarImg-preview', 'ref');
+        setupImageInput('cImg', 'cImg-preview', 'cons');
+
         const isDev = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
         const goToHash = () => {
             const hash = window.location.hash.replace('#', '');
@@ -654,14 +807,22 @@
         e.preventDefault();
         const btnId = type === 'ref' ? 'btn-ref' : 'btn-cons';
         const btn = document.getElementById(btnId);
-        btn.disabled = true; btn.innerText = "上傳中...";
         const originalText = type === 'ref' ? "提交數據" : "確認提交";
-        const formId = type === 'ref' ? 'refForm' : 'submitConsForm';
-        const file = document.querySelector(`#${formId} input[type="file"]`).files[0];
-        let imageData = "";
-        if(file) {
-            imageData = await compressImage(file);
+        const fileKey = type === 'ref' ? 'ref' : 'cons';
+
+        // ★ 修改7：驗證至少要有一張圖
+        if (selectedFiles[fileKey].length === 0) {
+            showToast('請至少上傳一張憑證圖片');
+            return;
         }
+
+        btn.disabled = true; btn.innerText = "上傳中...";
+
+        // ★ 修改8：把所有圖片都壓縮，得到 base64 陣列
+        const imageDataArray = await Promise.all(
+            selectedFiles[fileKey].map(file => compressImage(file))
+        );
+
         const payload = {
             uid: state.uid,
             invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value,
@@ -670,7 +831,8 @@
             tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value,
             date: type==='ref' ? document.getElementById('tarDate').value : new Date().toISOString().split('T')[0],
             amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value,
-            imageData: imageData,
+            // ★ 修改9：imageData 從單一字串改為陣列
+            imageData: imageDataArray,
             type: type==='ref' ? "成功推薦" : "增加消費"
         };
         try {
