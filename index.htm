@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>CYP135 推薦小幫手</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
@@ -179,6 +182,23 @@
             color: #333; border: 1px dashed #CCC;
         }
         input[type="file"] { display: none; }
+
+        /* 頒獎專用樣式 */
+        .award-inv-block { margin-bottom: 20px; }
+        .award-inv-title {
+            font-size: 14px; font-weight: 800; padding: 8px 12px;
+            background: #F0F0F0; border-radius: 8px; margin-bottom: 8px;
+        }
+        .award-recruit-row {
+            padding: 10px 12px; border-radius: 10px; margin-bottom: 8px;
+            border-left: 3px solid #EEE; background: #FAFAFA;
+        }
+        .award-recruit-row.effective { border-left-color: #2E7D32; }
+        .award-recruit-name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+        .award-status-row { display: flex; justify-content: space-between; align-items: center; }
+        .award-status-claimed { font-size: 12px; color: #2E7D32; font-weight: bold; }
+        .award-status-pending { font-size: 12px; color: #FF8F00; font-weight: bold; }
+        .award-status-none { font-size: 12px; color: var(--accent); font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -189,6 +209,29 @@
 <div id="image-viewer" onclick="this.style.display='none'">
     <img id="viewer-img" src="" alt="憑證照片" onclick="event.stopPropagation()">
     <div style="color:#fff; margin-top:20px; border:1px solid #fff; padding:10px 30px; border-radius:30px; cursor:pointer;">關閉視窗</div>
+</div>
+
+<!-- 頒獎登記 Modal -->
+<div id="award-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:flex-end; justify-content:center;">
+    <div style="background:#fff; border-radius:20px 20px 0 0; padding:24px 20px; width:100%; max-width:600px; box-sizing:border-box;">
+        <div style="font-size:15px; font-weight:800; margin-bottom:4px;" id="modal-tar-name"></div>
+        <div style="font-size:12px; color:#999; margin-bottom:16px;" id="modal-inv-name"></div>
+        <label>禮物</label>
+        <select id="modal-gift"></select>
+        <label>狀態</label>
+        <select id="modal-status" onchange="toggleModalClaimDate()">
+            <option value="已領取">已領取</option>
+            <option value="待領取">待領取（未到場）</option>
+        </select>
+        <div id="modal-claim-date-wrap">
+            <label>領取日期</label>
+            <input type="date" id="modal-claimDate">
+        </div>
+        <label>備註（選填）</label>
+        <input type="text" id="modal-note" placeholder="例如：缺席補領">
+        <button class="btn" onclick="submitAwardModal()" style="margin-top:20px;">確認登記</button>
+        <button class="btn" onclick="closeAwardModal()" style="background:#EEE; color:#000; margin-top:8px;">取消</button>
+    </div>
 </div>
 
 <div class="tab-bar" id="main-tabs">
@@ -281,6 +324,7 @@
     let state = { uid: "" };
     let adminDataCache = null;
     let giftDataCache = null;
+    let modalPayload = {};
 
     let selectedFiles = { ref: [], cons: [] };
 
@@ -550,7 +594,7 @@
         }
 
         cont.innerHTML = html;
-        if (tabName === 'award') loadGiftData();
+        if (tabName === 'award') setTimeout(() => loadGiftData(), 50);
     }
 
     function toggleDetail(id, btn) {
@@ -662,12 +706,12 @@
     async function loadGiftData() {
         try {
             const res = await apiCall('getGiftData');
-            if (!res.success || res.data.error) {
+            if (!res.success || (res.data && res.data.error)) {
                 document.getElementById('award-content').innerHTML = '<p style="text-align:center; color:red; padding:20px;">無法取得資料</p>';
                 return;
             }
             giftDataCache = res.data;
-            renderAwardContent('overview');
+            renderAwardContent('referrals');
         } catch(e) {
             document.getElementById('award-content').innerHTML = '<p style="text-align:center; color:red; padding:20px;">連線失敗</p>';
         }
@@ -675,157 +719,52 @@
 
     function renderAwardContent(subTab) {
         if (!giftDataCache) return;
-        const { gifts, allParticipants, referralList, giftRecords } = giftDataCache;
+        const { gifts, groupedReferrals } = giftDataCache;
 
-        // 子頁 tab bar
         let html = `
             <div class="sub-tab-bar" style="margin-bottom:20px;">
-                <div class="sub-tab ${subTab==='overview'?'active':''}" onclick="renderAwardContent('overview')">領獎總覽</div>
-                <div class="sub-tab ${subTab==='assign'?'active':''}" onclick="renderAwardContent('assign')">登記禮物</div>
+                <div class="sub-tab ${subTab==='referrals'?'active':''}" onclick="renderAwardContent('referrals')">推薦領獎</div>
                 <div class="sub-tab ${subTab==='gifts'?'active':''}" onclick="renderAwardContent('gifts')">禮物設定</div>
             </div>`;
 
-        // ── 領獎總覽 ──
-        if (subTab === 'overview') {
-            const startDate = document.getElementById('ov-start') ? document.getElementById('ov-start').value : '';
-            const endDate   = document.getElementById('ov-end')   ? document.getElementById('ov-end').value   : '';
-
-            // 在區間內有推薦的 invId
-            let qualifiedInvIds = new Set();
-            if (startDate && endDate) {
-                referralList.forEach(r => {
-                    if (r.date >= startDate && r.date <= endDate) qualifiedInvIds.add(r.invId);
-                });
-            }
-
-            // 已有領獎紀錄的 amId → 紀錄
-            const awardMap = {};
-            giftRecords.forEach(r => {
-                if (!awardMap[r.amId]) awardMap[r.amId] = [];
-                awardMap[r.amId].push(r);
-            });
-
-            // 符合區間的參賽者分組
-            let qualifiedList = startDate && endDate
-                ? allParticipants.filter(p => qualifiedInvIds.has(p.amId))
-                : allParticipants;
-
-            const awarded   = qualifiedList.filter(p => awardMap[p.amId]);
-            const unawarded = qualifiedList.filter(p => !awardMap[p.amId]);
-
-            html += `
-                <div class="group-frame">
-                    <div class="group-header">推薦區間篩選</div>
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <input type="date" id="ov-start" value="${startDate}" onchange="renderAwardContent('overview')">
-                        <span style="color:#999;">～</span>
-                        <input type="date" id="ov-end" value="${endDate}" onchange="renderAwardContent('overview')">
-                    </div>
-                    <div style="font-size:12px; color:#999; margin-top:8px;">
-                        ${startDate && endDate
-                            ? `此區間 ${qualifiedList.length} 人有推薦｜已登記 ${awarded.length} 人｜未登記 ${unawarded.length} 人`
-                            : '請選擇區間，或不選顯示全部名單'}
-                    </div>
-                </div>`;
-
-            // 未登記領獎
-            if (unawarded.length > 0) {
-                html += `<div class="group-frame"><div class="group-header" style="border-left-color:#FF8F00; color:#FF8F00;">⏳ 未登記禮物（${unawarded.length} 人）</div>`;
-                unawarded.forEach(p => {
-                    html += `<div class="card" onclick="gotoAssign('${p.amId}')">
-                        <div><b>${p.name}</b> <small style="color:#999;">(${p.amId})</small><br><small style="color:#999;">${p.group} 雁群</small></div>
-                        <div style="color:var(--accent); font-weight:bold;">登記 ➔</div>
-                    </div>`;
-                });
-                html += `</div>`;
-            }
-
-            // 已登記領獎
-            if (awarded.length > 0) {
-                html += `<div class="group-frame"><div class="group-header" style="border-left-color:#2E7D32; color:#2E7D32;">✅ 已登記禮物（${awarded.length} 人）</div>`;
-                awarded.forEach(p => {
-                    const records = awardMap[p.amId];
-                    records.forEach(r => {
-                        const isPending = r.status === '待領取';
-                        html += `
-                            <div class="card" style="flex-direction:column; align-items:flex-start; background:${isPending ? '#FFF8E1' : '#F9F9F9'}; border:1px solid ${isPending ? '#FFD54F' : 'rgba(0,0,0,0.03)'};">
-                                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
-                                    <span style="font-weight:bold;">${r.name} <small style="color:#999;">(${r.amId})</small></span>
-                                    <span class="tag ${isPending ? 'tag-plus1' : 'tag-green'}" style="${isPending ? 'background:#FF8F00; color:#fff;' : ''}">
-                                        ${isPending ? '⏳ 待領取' : '✅ 已領取'}
-                                    </span>
-                                </div>
-                                <div style="font-size:13px; color:#666; margin-bottom:4px;">🎁 ${r.giftName}</div>
-                                <div style="font-size:11px; color:#999;">
-                                    登記：${r.registerDate}${r.claimDate ? ` ｜ 領取：${r.claimDate}` : ''}${r.note ? ` ｜ ${r.note}` : ''}
-                                </div>
-                                ${isPending ? `<button class="btn" style="margin-top:10px;" onclick="confirmGift(${r.row})">確認已領取</button>` : ''}
-                            </div>`;
+        // ── 推薦領獎 ──
+        if (subTab === 'referrals') {
+            if (!groupedReferrals || groupedReferrals.length === 0) {
+                html += '<p style="text-align:center; color:#999; padding:20px;">尚無推薦紀錄</p>';
+            } else {
+                groupedReferrals.forEach(g => {
+                    html += `<div class="group-frame"><div class="group-header">${g.groupName} 小組</div>`;
+                    g.influencers.forEach(inv => {
+                        html += `<div class="award-inv-block">
+                            <div class="award-inv-title">${inv.invName} 推薦 ${inv.recruits.length} 人</div>`;
+                        inv.recruits.forEach(rec => {
+                            const isEffective = rec.points === 2;
+                            const ar = rec.awardRecord;
+                            let statusHtml = '';
+                            if (ar) {
+                                if (ar.status === '已領取') {
+                                    statusHtml = `<span class="award-status-claimed">✅ ${ar.claimDate} 領取 ${ar.giftName}</span>`;
+                                } else {
+                                    statusHtml = `
+                                        <span class="award-status-pending">⏳ 待領取 ${ar.giftName}</span>
+                                        <button type="button" onclick="confirmGift(${ar.row})" style="font-size:11px; background:#2E7D32; color:#fff; border:none; border-radius:6px; padding:3px 10px; cursor:pointer; font-weight:bold;">確認已領取</button>`;
+                                }
+                            } else {
+                                statusHtml = `<span class="award-status-none" onclick="openAwardModal('${inv.invId}','${rec.tarId}','${rec.tarName}','${inv.invName}')">🎁 登記領獎 ➔</span>`;
+                            }
+                            html += `
+                                <div class="award-recruit-row ${isEffective ? 'effective' : ''}">
+                                    <div class="award-recruit-name">
+                                        ${rec.tarName}
+                                        <span class="tag ${isEffective ? 'tag-green' : 'tag-plus1'}" style="margin-left:6px;">${isEffective ? '有效推薦' : '一般推薦'}</span>
+                                    </div>
+                                    <div class="award-status-row">${statusHtml}</div>
+                                </div>`;
+                        });
+                        html += `</div>`;
                     });
+                    html += `</div>`;
                 });
-                html += `</div>`;
-            }
-
-            if (qualifiedList.length === 0 && !startDate) {
-                html += `<p style="text-align:center; color:#999; padding:20px;">尚無領獎紀錄</p>`;
-            }
-
-        // ── 登記禮物 ──
-        } else if (subTab === 'assign') {
-            const giftOptions = gifts.map(g => {
-                const disabled = g.remaining === 0 ? 'disabled' : '';
-                const label = g.remaining === 0 ? `${g.name}（已額滿）` : `${g.name}（剩 ${g.remaining}）`;
-                return `<option value="${g.name}" ${disabled}>${label}</option>`;
-            }).join('');
-
-            const participantOptions = allParticipants.map(p =>
-                `<option value="${p.amId}" data-name="${p.name}" data-group="${p.group}">${p.name}（${p.amId}）</option>`
-            ).join('');
-
-            html += `
-                <div class="group-frame" id="award-form-wrap">
-                    <div class="group-header">登記禮物</div>
-                    <label>選擇成員</label>
-                    <select id="award-amId">
-                        <option value="">請選擇</option>
-                        ${participantOptions}
-                    </select>
-                    <label>禮物</label>
-                    <select id="award-gift">
-                        <option value="">請選擇</option>
-                        ${giftOptions}
-                    </select>
-                    <label>狀態</label>
-                    <select id="award-status" onchange="toggleAwardClaimDate()">
-                        <option value="已領取">已領取</option>
-                        <option value="待領取">待領取（未到場）</option>
-                    </select>
-                    <div id="award-claim-date-wrap">
-                        <label>領取日期</label>
-                        <input type="date" id="award-claimDate" value="${new Date().toISOString().split('T')[0]}">
-                    </div>
-                    <label>備註（選填）</label>
-                    <input type="text" id="award-note" placeholder="例如：缺席補領">
-                    <button class="btn" onclick="assignGift()">確認登記</button>
-                </div>`;
-
-            // 待領取的紀錄列在下方，方便一鍵確認
-            const pendingRecords = giftRecords.filter(r => r.status === '待領取');
-            if (pendingRecords.length > 0) {
-                html += `<div class="group-frame"><div class="group-header" style="border-left-color:#FF8F00; color:#FF8F00;">⏳ 待領取名單（${pendingRecords.length} 人）</div>`;
-                pendingRecords.forEach(r => {
-                    html += `
-                        <div class="card" style="flex-direction:column; align-items:flex-start; background:#FFF8E1; border:1px solid #FFD54F;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
-                                <span style="font-weight:bold;">${r.name} <small style="color:#999;">(${r.amId})</small></span>
-                                <span class="tag tag-plus1" style="background:#FF8F00; color:#fff;">⏳ 待領取</span>
-                            </div>
-                            <div style="font-size:13px; color:#666; margin-bottom:4px;">🎁 ${r.giftName}</div>
-                            <div style="font-size:11px; color:#999;">登記：${r.registerDate}${r.note ? ` ｜ ${r.note}` : ''}</div>
-                            <button class="btn" style="margin-top:10px;" onclick="confirmGift(${r.row})">確認已領取</button>
-                        </div>`;
-                });
-                html += `</div>`;
             }
 
         // ── 禮物設定 ──
@@ -835,15 +774,15 @@
                     <div class="group-header">新增禮物</div>
                     <label>禮物名稱</label>
                     <input type="text" id="new-gift-name" placeholder="例如：AirPods Pro">
-                    <label>數量</label>
-                    <input type="number" id="new-gift-total" placeholder="0 代表無限制">
+                    <label>數量（0 代表無限制）</label>
+                    <input type="number" id="new-gift-total" placeholder="0">
                     <label>備註（選填）</label>
                     <input type="text" id="new-gift-note" placeholder="">
                     <button class="btn" onclick="addGift()">新增禮物</button>
                 </div>`;
 
             html += `<div class="group-frame"><div class="group-header">目前禮物清單</div>`;
-            if (gifts.length === 0) {
+            if (!gifts || gifts.length === 0) {
                 html += `<p style="text-align:center; color:#999; padding:10px;">尚無禮物，請先新增</p>`;
             } else {
                 gifts.forEach(g => {
@@ -870,35 +809,55 @@
         document.getElementById('award-content').innerHTML = html;
     }
 
-    // 從總覽點擊「登記」跳到登記禮物 tab 並帶入成員
-    function gotoAssign(amId) {
-        renderAwardContent('assign');
-        setTimeout(() => {
-            const sel = document.getElementById('award-amId');
-            if (sel) sel.value = amId;
-        }, 50);
+    // ── Modal 開啟/關閉 ──
+    function openAwardModal(invId, tarId, tarName, invName) {
+        if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) {
+            showToast('請先在「禮物設定」新增禮物');
+            return;
+        }
+        modalPayload = { invId, tarId, tarName };
+        document.getElementById('modal-tar-name').innerText = `登記禮物：${tarName}`;
+        document.getElementById('modal-inv-name').innerText = `推薦人：${invName}`;
+        document.getElementById('modal-gift').innerHTML = giftDataCache.gifts.map(g => {
+            const disabled = g.remaining === 0 ? 'disabled' : '';
+            const label = g.remaining === 0 ? `${g.name}（已額滿）` : `${g.name}（剩 ${g.remaining}）`;
+            return `<option value="${g.name}" ${disabled}>${label}</option>`;
+        }).join('');
+        document.getElementById('modal-claimDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('modal-note').value = '';
+        document.getElementById('modal-status').value = '已領取';
+        document.getElementById('modal-claim-date-wrap').style.display = 'block';
+        document.getElementById('award-modal').style.display = 'flex';
     }
 
-    function toggleAwardClaimDate() {
-        const status = document.getElementById('award-status').value;
-        document.getElementById('award-claim-date-wrap').style.display = status === '已領取' ? 'block' : 'none';
+    function closeAwardModal() {
+        document.getElementById('award-modal').style.display = 'none';
     }
 
-    async function assignGift() {
-        const sel       = document.getElementById('award-amId');
-        const amId      = sel.value;
-        const opt       = sel.options[sel.selectedIndex];
-        const name      = opt ? opt.dataset.name : '';
-        const group     = opt ? opt.dataset.group : '';
-        const giftName  = document.getElementById('award-gift').value;
-        const status    = document.getElementById('award-status').value;
-        const claimDate = document.getElementById('award-claimDate') ? document.getElementById('award-claimDate').value : '';
-        const note      = document.getElementById('award-note').value;
-        if (!amId || !giftName) { showToast('請選擇成員與禮物'); return; }
+    function toggleModalClaimDate() {
+        const status = document.getElementById('modal-status').value;
+        document.getElementById('modal-claim-date-wrap').style.display = status === '已領取' ? 'block' : 'none';
+    }
+
+    async function submitAwardModal() {
+        const giftName  = document.getElementById('modal-gift').value;
+        const status    = document.getElementById('modal-status').value;
+        const claimDate = document.getElementById('modal-claimDate').value;
+        const note      = document.getElementById('modal-note').value;
+        if (!giftName) { showToast('請選擇禮物'); return; }
         try {
-            const res = await apiCall('assignGift', { amId, name, group, giftName, status, claimDate, note });
+            const res = await apiCall('assignGift', {
+                invId: modalPayload.invId,
+                tarId: modalPayload.tarId,
+                tarName: modalPayload.tarName,
+                giftName, status, claimDate, note
+            });
             showToast(res.message);
-            if (res.success) { giftDataCache = null; await loadGiftData(); }
+            if (res.success) {
+                closeAwardModal();
+                giftDataCache = null;
+                await loadGiftData();
+            }
         } catch(e) { showToast('連線失敗'); }
     }
 
