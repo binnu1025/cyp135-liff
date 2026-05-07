@@ -58,18 +58,27 @@
             display: flex; justify-content: space-between; align-items: center;
             border: 1px solid rgba(0,0,0,0.03); cursor: pointer;
         }
+
+        /* ── 兩列 sub-tab-bar ── */
         .sub-tab-bar {
-            display: flex; border-bottom: 1px solid #EEE; margin-bottom: 20px;
-            overflow-x: auto; -webkit-overflow-scrolling: touch;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-bottom: 1px solid #EEE;
+            margin-bottom: 20px;
+        }
+        .sub-tab-bar.two-row {
+            grid-template-columns: repeat(3, 1fr);
         }
         .sub-tab {
-            flex-shrink: 0; text-align: center; padding: 12px 14px; font-size: 13px;
-            color: #999; cursor: pointer; position: relative; font-weight: bold; white-space: nowrap;
+            text-align: center; padding: 11px 6px; font-size: 13px;
+            color: #999; cursor: pointer; position: relative; font-weight: bold;
+            white-space: nowrap;
         }
         .sub-tab.active { color: #000; }
         .sub-tab.active::after {
             content: ""; position: absolute; bottom: -1px; left: 10%; width: 80%; height: 3px; background: #000;
         }
+
         .black-header {
             background: #000; color: #FFF; padding: 12px 15px; border-radius: 8px 8px 0 0;
             font-weight: bold; font-size: 14px; margin-top: 15px;
@@ -183,8 +192,8 @@
         }
         input[type="file"] { display: none; }
 
-        /* 頒獎專用樣式 */
-        .award-inv-block { margin-bottom: 20px; }
+        /* 頒獎專用 */
+        .award-inv-block { margin-bottom: 16px; }
         .award-inv-title {
             font-size: 14px; font-weight: 800; padding: 8px 12px;
             background: #F0F0F0; border-radius: 8px; margin-bottom: 8px;
@@ -194,11 +203,18 @@
             border-left: 3px solid #EEE; background: #FAFAFA;
         }
         .award-recruit-row.effective { border-left-color: #2E7D32; }
-        .award-recruit-name { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
-        .award-status-row { display: flex; justify-content: space-between; align-items: center; }
+        .award-recruit-name { font-size: 14px; font-weight: bold; margin-bottom: 6px; }
+        .award-status-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
         .award-status-claimed { font-size: 12px; color: #2E7D32; font-weight: bold; }
         .award-status-pending { font-size: 12px; color: #FF8F00; font-weight: bold; }
-        .award-status-none { font-size: 12px; color: var(--accent); font-weight: bold; cursor: pointer; }
+        .award-btn-sm {
+            font-size: 11px; background: #000; color: #fff; border: none;
+            border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: bold;
+        }
+        .award-btn-green {
+            font-size: 11px; background: #2E7D32; color: #fff; border: none;
+            border-radius: 6px; padding: 4px 12px; cursor: pointer; font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -211,19 +227,19 @@
     <div style="color:#fff; margin-top:20px; border:1px solid #fff; padding:10px 30px; border-radius:30px; cursor:pointer;">關閉視窗</div>
 </div>
 
-<!-- 頒獎登記 Modal -->
+<!-- 登記禮物 Modal（登記 & 待領取） -->
 <div id="award-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:flex-end; justify-content:center;">
     <div style="background:#fff; border-radius:20px 20px 0 0; padding:24px 20px; width:100%; max-width:600px; box-sizing:border-box;">
         <div style="font-size:15px; font-weight:800; margin-bottom:4px;" id="modal-tar-name"></div>
         <div style="font-size:12px; color:#999; margin-bottom:16px;" id="modal-inv-name"></div>
-        <label>禮物</label>
-        <select id="modal-gift"></select>
         <label>狀態</label>
-        <select id="modal-status" onchange="toggleModalClaimDate()">
+        <select id="modal-status" onchange="toggleModalGiftSection()">
             <option value="已領取">已領取</option>
             <option value="待領取">待領取（未到場）</option>
         </select>
-        <div id="modal-claim-date-wrap">
+        <div id="modal-gift-section">
+            <label>禮物</label>
+            <select id="modal-gift"></select>
             <label>領取日期</label>
             <input type="date" id="modal-claimDate">
         </div>
@@ -231,6 +247,20 @@
         <input type="text" id="modal-note" placeholder="例如：缺席補領">
         <button class="btn" onclick="submitAwardModal()" style="margin-top:20px;">確認登記</button>
         <button class="btn" onclick="closeAwardModal()" style="background:#EEE; color:#000; margin-top:8px;">取消</button>
+    </div>
+</div>
+
+<!-- 確認已領取 Modal（待領取 → 已領取時選禮物） -->
+<div id="confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:flex-end; justify-content:center;">
+    <div style="background:#fff; border-radius:20px 20px 0 0; padding:24px 20px; width:100%; max-width:600px; box-sizing:border-box;">
+        <div style="font-size:15px; font-weight:800; margin-bottom:4px;" id="confirm-tar-name"></div>
+        <div style="font-size:12px; color:#999; margin-bottom:16px;">確認已到場領取</div>
+        <label>禮物</label>
+        <select id="confirm-gift"></select>
+        <label>領取日期</label>
+        <input type="date" id="confirm-claimDate">
+        <button class="btn" onclick="submitConfirmModal()" style="margin-top:20px;">確認已領取</button>
+        <button class="btn" onclick="closeConfirmModal()" style="background:#EEE; color:#000; margin-top:8px;">取消</button>
     </div>
 </div>
 
@@ -242,7 +272,6 @@
 </div>
 
 <div class="container">
-    <!-- 註冊頁 -->
     <div id="reg-page" class="page" style="display:none">
         <h2 style="margin-top:0;">身分確認 / 註冊報名</h2>
         <p style="color:#666; font-size:14px; margin-bottom:20px;">偵測到您尚未綁定。若已報名，請輸入編號認領身分；若未報名，請填寫資料。</p>
@@ -257,7 +286,6 @@
         </form>
     </div>
 
-    <!-- 成功推薦 -->
     <div id="ref" class="page">
         <div class="profile-tags" id="profile-tags">
             <span class="profile-tag-item" id="profile-classroom"></span>
@@ -284,7 +312,6 @@
         </form>
     </div>
 
-    <!-- 增加消費 -->
     <div id="cons" class="page" style="display:none">
         <h2 style="margin-top:0;">增加消費金額</h2>
         <div id="member-list"></div>
@@ -306,13 +333,11 @@
         </div>
     </div>
 
-    <!-- 雁群小組 -->
     <div id="group" class="page" style="display:none">
         <h2 style="margin-top:0;">雁群小組戰報</h2>
         <div id="group-perf-list"></div>
     </div>
 
-    <!-- 會長專區 -->
     <div id="adm" class="page" style="display:none">
         <h2 style="margin-top:0;">會長專區</h2>
         <div id="admin-content"></div>
@@ -325,7 +350,7 @@
     let adminDataCache = null;
     let giftDataCache = null;
     let modalPayload = {};
-
+    let confirmPayload = {};
     let selectedFiles = { ref: [], cons: [] };
 
     function showToast(msg) {
@@ -513,13 +538,16 @@
     function renderAdminTab(tabName) {
         if(!adminDataCache && tabName !== 'award') return;
         const cont = document.getElementById('admin-content');
+
+        // 兩列 sub-tab-bar：第一列3個，第二列2個置中
         let html = `
-            <div class="sub-tab-bar">
+            <div class="sub-tab-bar two-row">
                 <div class="sub-tab ${tabName==='pending'?'active':''}" onclick="renderAdminTab('pending')">待審核</div>
                 <div class="sub-tab ${tabName==='stats'?'active':''}" onclick="renderAdminTab('stats')">績效統計</div>
                 <div class="sub-tab ${tabName==='yanqun'?'active':''}" onclick="renderAdminTab('yanqun')">雁群統計</div>
                 <div class="sub-tab ${tabName==='roster'?'active':''}" onclick="renderAdminTab('roster')">參賽名單</div>
                 <div class="sub-tab ${tabName==='award'?'active':''}" onclick="renderAdminTab('award')">頒獎管理</div>
+                <div class="sub-tab" style="cursor:default;"></div>
             </div>`;
 
         if (tabName === 'pending') {
@@ -722,16 +750,45 @@
         const { gifts, groupedReferrals } = giftDataCache;
 
         let html = `
-            <div class="sub-tab-bar" style="margin-bottom:20px;">
+            <div class="sub-tab-bar" style="grid-template-columns: repeat(2,1fr); margin-bottom:20px;">
                 <div class="sub-tab ${subTab==='referrals'?'active':''}" onclick="renderAwardContent('referrals')">推薦領獎</div>
                 <div class="sub-tab ${subTab==='gifts'?'active':''}" onclick="renderAwardContent('gifts')">禮物設定</div>
             </div>`;
 
-        // ── 推薦領獎 ──
         if (subTab === 'referrals') {
             if (!groupedReferrals || groupedReferrals.length === 0) {
                 html += '<p style="text-align:center; color:#999; padding:20px;">尚無推薦紀錄</p>';
             } else {
+                // 收集所有尚未領取的被推薦人
+                const notAwarded = [];
+                groupedReferrals.forEach(g => {
+                    g.influencers.forEach(inv => {
+                        inv.recruits.forEach(rec => {
+                            if (!rec.awardRecord) {
+                                notAwarded.push({ ...rec, invId: inv.invId, invName: inv.invName, groupName: g.groupName });
+                            }
+                        });
+                    });
+                });
+
+                // 尚未領取區
+                if (notAwarded.length > 0) {
+                    html += `<div class="group-frame"><div class="group-header" style="border-left-color:#FF8F00; color:#FF8F00;">⏳ 尚未登記禮物（${notAwarded.length} 人）</div>`;
+                    notAwarded.forEach(rec => {
+                        html += `
+                            <div class="card">
+                                <div>
+                                    <b>${rec.tarName}</b>
+                                    <span class="tag ${rec.points === 2 ? 'tag-green' : 'tag-plus1'}" style="margin-left:6px;">${rec.points === 2 ? '有效推薦' : '一般推薦'}</span>
+                                    <br><small style="color:#999;">${rec.groupName} ／ 推薦人：${rec.invName}</small>
+                                </div>
+                                <button class="award-btn-sm" onclick="openAwardModal('${rec.invId}','${rec.tarId}','${rec.tarName}','${rec.invName}')">登記 ➔</button>
+                            </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                // 各雁群詳細列表
                 groupedReferrals.forEach(g => {
                     html += `<div class="group-frame"><div class="group-header">${g.groupName} 小組</div>`;
                     g.influencers.forEach(inv => {
@@ -745,12 +802,13 @@
                                 if (ar.status === '已領取') {
                                     statusHtml = `<span class="award-status-claimed">✅ ${ar.claimDate} 領取 ${ar.giftName}</span>`;
                                 } else {
+                                    // 待領取：顯示狀態 + 確認已領取按鈕
                                     statusHtml = `
-                                        <span class="award-status-pending">⏳ 待領取 ${ar.giftName}</span>
-                                        <button type="button" onclick="confirmGift(${ar.row})" style="font-size:11px; background:#2E7D32; color:#fff; border:none; border-radius:6px; padding:3px 10px; cursor:pointer; font-weight:bold;">確認已領取</button>`;
+                                        <span class="award-status-pending">⏳ 待領取（${ar.registerDate} 登記）</span>
+                                        <button class="award-btn-green" onclick="openConfirmModal(${ar.row},'${rec.tarName}')">確認已領取</button>`;
                                 }
                             } else {
-                                statusHtml = `<span class="award-status-none" onclick="openAwardModal('${inv.invId}','${rec.tarId}','${rec.tarName}','${inv.invName}')">🎁 登記領獎 ➔</span>`;
+                                statusHtml = `<button class="award-btn-sm" onclick="openAwardModal('${inv.invId}','${rec.tarId}','${rec.tarName}','${inv.invName}')">登記禮物 ➔</button>`;
                             }
                             html += `
                                 <div class="award-recruit-row ${isEffective ? 'effective' : ''}">
@@ -767,7 +825,6 @@
                 });
             }
 
-        // ── 禮物設定 ──
         } else if (subTab === 'gifts') {
             html += `
                 <div class="group-frame">
@@ -809,7 +866,16 @@
         document.getElementById('award-content').innerHTML = html;
     }
 
-    // ── Modal 開啟/關閉 ──
+    function buildGiftOptions() {
+        if (!giftDataCache || !giftDataCache.gifts) return '';
+        return giftDataCache.gifts.map(g => {
+            const disabled = g.remaining === 0 ? 'disabled' : '';
+            const label = g.remaining === 0 ? `${g.name}（已額滿）` : `${g.name}（剩 ${g.remaining}）`;
+            return `<option value="${g.name}" ${disabled}>${label}</option>`;
+        }).join('');
+    }
+
+    // 登記禮物 Modal（新登記）
     function openAwardModal(invId, tarId, tarName, invName) {
         if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) {
             showToast('請先在「禮物設定」新增禮物');
@@ -818,15 +884,11 @@
         modalPayload = { invId, tarId, tarName };
         document.getElementById('modal-tar-name').innerText = `登記禮物：${tarName}`;
         document.getElementById('modal-inv-name').innerText = `推薦人：${invName}`;
-        document.getElementById('modal-gift').innerHTML = giftDataCache.gifts.map(g => {
-            const disabled = g.remaining === 0 ? 'disabled' : '';
-            const label = g.remaining === 0 ? `${g.name}（已額滿）` : `${g.name}（剩 ${g.remaining}）`;
-            return `<option value="${g.name}" ${disabled}>${label}</option>`;
-        }).join('');
+        document.getElementById('modal-gift').innerHTML = buildGiftOptions();
         document.getElementById('modal-claimDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('modal-note').value = '';
         document.getElementById('modal-status').value = '已領取';
-        document.getElementById('modal-claim-date-wrap').style.display = 'block';
+        document.getElementById('modal-gift-section').style.display = 'block';
         document.getElementById('award-modal').style.display = 'flex';
     }
 
@@ -834,17 +896,17 @@
         document.getElementById('award-modal').style.display = 'none';
     }
 
-    function toggleModalClaimDate() {
+    function toggleModalGiftSection() {
         const status = document.getElementById('modal-status').value;
-        document.getElementById('modal-claim-date-wrap').style.display = status === '已領取' ? 'block' : 'none';
+        document.getElementById('modal-gift-section').style.display = status === '已領取' ? 'block' : 'none';
     }
 
     async function submitAwardModal() {
-        const giftName  = document.getElementById('modal-gift').value;
         const status    = document.getElementById('modal-status').value;
-        const claimDate = document.getElementById('modal-claimDate').value;
+        const giftName  = status === '已領取' ? document.getElementById('modal-gift').value : '';
+        const claimDate = status === '已領取' ? document.getElementById('modal-claimDate').value : '';
         const note      = document.getElementById('modal-note').value;
-        if (!giftName) { showToast('請選擇禮物'); return; }
+        if (status === '已領取' && !giftName) { showToast('請選擇禮物'); return; }
         try {
             const res = await apiCall('assignGift', {
                 invId: modalPayload.invId,
@@ -853,20 +915,35 @@
                 giftName, status, claimDate, note
             });
             showToast(res.message);
-            if (res.success) {
-                closeAwardModal();
-                giftDataCache = null;
-                await loadGiftData();
-            }
+            if (res.success) { closeAwardModal(); giftDataCache = null; await loadGiftData(); }
         } catch(e) { showToast('連線失敗'); }
     }
 
-    async function confirmGift(row) {
-        const claimDate = new Date().toISOString().split('T')[0];
+    // 確認已領取 Modal（待領取 → 已領取，這時才選禮物）
+    function openConfirmModal(row, tarName) {
+        if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) {
+            showToast('請先在「禮物設定」新增禮物');
+            return;
+        }
+        confirmPayload = { row };
+        document.getElementById('confirm-tar-name').innerText = `確認領取：${tarName}`;
+        document.getElementById('confirm-gift').innerHTML = buildGiftOptions();
+        document.getElementById('confirm-claimDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    async function submitConfirmModal() {
+        const giftName  = document.getElementById('confirm-gift').value;
+        const claimDate = document.getElementById('confirm-claimDate').value;
+        if (!giftName) { showToast('請選擇禮物'); return; }
         try {
-            const res = await apiCall('confirmGift', { row, claimDate });
+            const res = await apiCall('confirmGift', { row: confirmPayload.row, giftName, claimDate });
             showToast(res.message);
-            if (res.success) { giftDataCache = null; await loadGiftData(); }
+            if (res.success) { closeConfirmModal(); giftDataCache = null; await loadGiftData(); }
         } catch(e) { showToast('連線失敗'); }
     }
 
