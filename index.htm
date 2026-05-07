@@ -178,7 +178,6 @@
         }
         .field-warn.show { display: block; }
 
-        /* ===== 多圖預覽區樣式 ===== */
         .img-preview-area {
             display: flex;
             flex-wrap: wrap;
@@ -222,7 +221,6 @@
             color: #999;
             margin-top: 5px;
         }
-        /* 自訂 file input 外觀 */
         .file-input-wrap {
             margin-top: 10px;
         }
@@ -238,7 +236,7 @@
             border: 1px dashed #CCC;
         }
         input[type="file"] {
-            display: none; /* 隱藏原生 input，改用按鈕觸發 */
+            display: none;
         }
     </style>
 </head>
@@ -291,18 +289,13 @@
             <label>新人姓名</label><input type="text" id="tarName" required>
             <label>日期</label><input type="date" id="tarDate" min="2026-03-01" required>
             <label>金額</label><input type="number" id="tarAmt" required>
-
-            <!-- ★ 修改1：成功推薦的圖片欄位，改為多張 -->
             <label>憑證（可選多張）</label>
             <div class="file-input-wrap">
                 <label class="file-input-btn" for="tarImg">📷 選擇圖片</label>
-                <!-- multiple 讓使用者可以一次選多張 -->
                 <input type="file" id="tarImg" accept="image/*" multiple>
             </div>
             <div class="img-hint">可選多張，點縮圖可放大，點 ✕ 可移除</div>
-            <!-- 預覽區塊 -->
             <div class="img-preview-area" id="tarImg-preview"></div>
-
             <button class="btn" type="submit" id="btn-ref">提交數據</button>
         </form>
     </div>
@@ -317,18 +310,13 @@
                 <input type="hidden" id="cTarId"><input type="hidden" id="cTarName">
                 <input type="hidden" id="cInvId"><input type="hidden" id="cInvName">
                 <label>補填消費金額</label><input type="number" id="cAmt" required>
-
-                <!-- ★ 修改2：增加消費的圖片欄位，改為多張 -->
                 <label>憑證（可選多張）</label>
                 <div class="file-input-wrap">
                     <label class="file-input-btn" for="cImg">📷 選擇圖片</label>
-                    <!-- multiple 讓使用者可以一次選多張 -->
                     <input type="file" id="cImg" accept="image/*" multiple>
                 </div>
                 <div class="img-hint">可選多張，點縮圖可放大，點 ✕ 可移除</div>
-                <!-- 預覽區塊 -->
                 <div class="img-preview-area" id="cImg-preview"></div>
-
                 <button class="btn" type="submit" id="btn-cons">確認提交</button>
             </form>
         </div>
@@ -351,11 +339,11 @@
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
     let state = { uid: "" };
     let adminDataCache = null;
+    let giftDataCache = null; // ★ 新增：頒獎資料快取
 
-    // ★ 修改3：用兩個陣列分別儲存「推薦」和「增加消費」已選的 File 物件
     let selectedFiles = {
-        ref: [],   // 成功推薦的圖片們
-        cons: []   // 增加消費的圖片們
+        ref: [],
+        cons: []
     };
 
     function showToast(msg) {
@@ -376,67 +364,53 @@
         return response.json();
     }
 
-    // ★ 修改4：設定圖片選擇事件，支援多次選圖累加（不覆蓋）
     function setupImageInput(inputId, previewId, fileKey) {
         const input = document.getElementById(inputId);
         const previewArea = document.getElementById(previewId);
 
         input.addEventListener('change', () => {
             const newFiles = Array.from(input.files);
-
-            // 每次選完後限制總數不超過 5 張
             const remaining = 5 - selectedFiles[fileKey].length;
             if (remaining <= 0) {
                 showToast('最多只能上傳 5 張圖片');
                 input.value = '';
                 return;
             }
-
             const toAdd = newFiles.slice(0, remaining);
             if (newFiles.length > remaining) {
                 showToast(`已達上限，只加入前 ${remaining} 張`);
             }
-
             toAdd.forEach(file => {
                 selectedFiles[fileKey].push(file);
                 addPreviewItem(file, previewArea, fileKey);
             });
-
-            // 清空 input value，讓使用者可以重複選同一張
             input.value = '';
         });
     }
 
-    // ★ 修改5：產生單張圖片的縮圖預覽，並綁定移除和放大功能
     function addPreviewItem(file, previewArea, fileKey) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const dataUrl = e.target.result;
-            const index = selectedFiles[fileKey].length - 1; // 這張在陣列中的位置
-
+            const index = selectedFiles[fileKey].length - 1;
             const item = document.createElement('div');
             item.className = 'img-preview-item';
             item.dataset.index = index;
-
             const img = document.createElement('img');
             img.src = dataUrl;
-            img.onclick = () => viewImage(dataUrl); // 點縮圖可放大
-
+            img.onclick = () => viewImage(dataUrl);
             const removeBtn = document.createElement('button');
             removeBtn.className = 'img-preview-remove';
             removeBtn.innerText = '✕';
             removeBtn.type = 'button';
             removeBtn.onclick = (ev) => {
                 ev.stopPropagation();
-                // 從陣列移除這張
                 const idx = parseInt(item.dataset.index);
                 selectedFiles[fileKey].splice(idx, 1);
-                // 更新後面每張的 index
                 const allItems = previewArea.querySelectorAll('.img-preview-item');
                 allItems.forEach((el, i) => { if (i > idx) el.dataset.index = i - 1; });
                 item.remove();
             };
-
             item.appendChild(img);
             item.appendChild(removeBtn);
             previewArea.appendChild(item);
@@ -594,7 +568,7 @@
     }
 
     function renderAdminTab(tabName) {
-        if(!adminDataCache) return;
+        if(!adminDataCache && tabName !== 'award') return;
         const cont = document.getElementById('admin-content');
         let html = `
             <div class="sub-tab-bar">
@@ -602,6 +576,7 @@
                 <div class="sub-tab ${tabName==='stats'?'active':''}" onclick="renderAdminTab('stats')">績效統計</div>
                 <div class="sub-tab ${tabName==='yanqun'?'active':''}" onclick="renderAdminTab('yanqun')">雁群統計</div>
                 <div class="sub-tab ${tabName==='roster'?'active':''}" onclick="renderAdminTab('roster')">參賽名單</div>
+                <div class="sub-tab ${tabName==='award'?'active':''}" onclick="renderAdminTab('award')">頒獎管理</div>
             </div>
         `;
 
@@ -618,7 +593,7 @@
                                 <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">${r.invName} ➔ ${r.tarName} <span style="font-weight:normal; color:#666;">($${r.amt})</span></div>
                                 <div style="font-size:12px; color:#999; margin-bottom:10px;">類型: ${r.type || '未標記'}</div>
                                 ${r.img ? r.img.split(',').map((url, i) => `
-    <button type="button" class="btn" style="background:#F0F0F0; color:#000; margin-bottom:8px; padding:10px; height:auto;" 
+    <button type="button" class="btn" style="background:#F0F0F0; color:#000; margin-bottom:8px; padding:10px; height:auto;"
     onclick="viewImage('${url.trim()}')">📸 查看憑證 ${r.img.split(',').length > 1 ? (i + 1) : ''}</button>
 `).join('') : ''}
                                 <div style="display:flex; gap:10px;">
@@ -713,8 +688,16 @@
                     </div>
                 `;
             }
+
+        // ★ 新增：頒獎管理 tab
+        } else if (tabName === 'award') {
+            html += `<div id="award-content"><p style="text-align:center; color:#999; padding:20px;">載入中...</p></div>`;
         }
+
         cont.innerHTML = html;
+
+        // ★ 新增：渲染完後若是 award tab 才載入禮物資料
+        if (tabName === 'award') loadGiftData();
     }
 
     function toggleDetail(id, btn) {
@@ -780,7 +763,6 @@
     }
 
     window.onload = () => {
-        // ★ 修改6：頁面載入後，綁定兩個 input 的多圖選取事件
         setupImageInput('tarImg', 'tarImg-preview', 'ref');
         setupImageInput('cImg', 'cImg-preview', 'cons');
 
@@ -813,7 +795,6 @@
         const originalText = type === 'ref' ? "提交數據" : "確認提交";
         const fileKey = type === 'ref' ? 'ref' : 'cons';
 
-        // ★ 修改7：驗證至少要有一張圖
         if (selectedFiles[fileKey].length === 0) {
             showToast('請至少上傳一張憑證圖片');
             return;
@@ -821,7 +802,6 @@
 
         btn.disabled = true; btn.innerText = "上傳中...";
 
-        // ★ 修改8：把所有圖片都壓縮，得到 base64 陣列
         const imageDataArray = await Promise.all(
             selectedFiles[fileKey].map(file => compressImage(file))
         );
@@ -834,7 +814,6 @@
             tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value,
             date: type==='ref' ? document.getElementById('tarDate').value : new Date().toISOString().split('T')[0],
             amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value,
-            // ★ 修改9：imageData 從單一字串改為陣列
             imageData: imageDataArray,
             type: type==='ref' ? "成功推薦" : "增加消費"
         };
@@ -846,6 +825,194 @@
             showToast("提交失敗"); btn.disabled = false; btn.innerText = originalText;
         }
     }
+
+    // ==========================================
+    // ★ 新增：頒獎管理功能
+    // ==========================================
+
+    async function loadGiftData() {
+        try {
+            const res = await apiCall('getGiftData');
+            if (!res.success || res.data.error) {
+                document.getElementById('award-content').innerHTML = '<p style="text-align:center; color:red; padding:20px;">無法取得資料</p>';
+                return;
+            }
+            giftDataCache = res.data;
+            renderAwardContent();
+        } catch(e) {
+            document.getElementById('award-content').innerHTML = '<p style="text-align:center; color:red; padding:20px;">連線失敗</p>';
+        }
+    }
+
+    function renderAwardContent() {
+        if (!giftDataCache) return;
+        const { gifts, allParticipants, referralList, giftRecords } = giftDataCache;
+
+        const startDate = document.getElementById('award-start') ? document.getElementById('award-start').value : '';
+        const endDate   = document.getElementById('award-end')   ? document.getElementById('award-end').value   : '';
+
+        let qualifiedInvIds = new Set();
+        if (startDate && endDate) {
+            referralList.forEach(r => {
+                if (r.date >= startDate && r.date <= endDate) qualifiedInvIds.add(r.invId);
+            });
+        }
+
+        const awardedAmIds = new Set(giftRecords.map(r => r.amId));
+
+        let unawarded = [];
+        if (startDate && endDate) {
+            allParticipants.forEach(p => {
+                if (qualifiedInvIds.has(p.amId) && !awardedAmIds.has(p.amId)) unawarded.push(p);
+            });
+        }
+
+        const giftOptions = gifts.map(g => {
+            const disabled = g.remaining === 0 ? 'disabled' : '';
+            const label = g.remaining === 0 ? `${g.name}（已額滿）` : `${g.name}（剩 ${g.remaining}）`;
+            return `<option value="${g.name}" ${disabled}>${label}</option>`;
+        }).join('');
+
+        const participantOptions = allParticipants.map(p =>
+            `<option value="${p.amId}" data-name="${p.name}" data-group="${p.group}">${p.name}（${p.amId}）</option>`
+        ).join('');
+
+        let html = '';
+
+        // 篩選區間
+        html += `
+            <div class="group-frame">
+                <div class="group-header">推薦區間篩選</div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <input type="date" id="award-start" value="${startDate}" onchange="renderAwardContent()">
+                    <span style="color:#999;">～</span>
+                    <input type="date" id="award-end" value="${endDate}" onchange="renderAwardContent()">
+                </div>
+                ${startDate && endDate
+                    ? `<div style="font-size:12px; color:#999; margin-top:8px;">此區間共 ${qualifiedInvIds.size} 人有推薦紀錄，其中 ${unawarded.length} 人尚未登記禮物</div>`
+                    : `<div style="font-size:12px; color:#999; margin-top:8px;">請選擇日期區間以顯示未領獎名單</div>`}
+            </div>
+        `;
+
+        // 未領獎名單
+        if (startDate && endDate && unawarded.length > 0) {
+            html += `<div class="group-frame"><div class="group-header" style="border-left-color:#FF8F00; color:#FF8F00;">未登記禮物（${unawarded.length} 人）</div>`;
+            unawarded.forEach(p => {
+                html += `
+                    <div class="card" onclick="selectForAward('${p.amId}')">
+                        <div><b>${p.name}</b> <small>(${p.amId})</small><br><small style="color:#999;">${p.group} 雁群</small></div>
+                        <div style="color:var(--accent); font-weight:bold;">登記 ➔</div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+
+        // 登記禮物表單
+        html += `
+            <div class="group-frame" id="award-form-wrap">
+                <div class="group-header">登記禮物</div>
+                <label>選擇成員</label>
+                <select id="award-amId">
+                    <option value="">請選擇</option>
+                    ${participantOptions}
+                </select>
+                <label>禮物</label>
+                <select id="award-gift">
+                    <option value="">請選擇</option>
+                    ${giftOptions}
+                </select>
+                <label>狀態</label>
+                <select id="award-status" onchange="toggleAwardClaimDate()">
+                    <option value="已領取">已領取</option>
+                    <option value="待領取">待領取</option>
+                </select>
+                <div id="award-claim-date-wrap">
+                    <label>領取日期</label>
+                    <input type="date" id="award-claimDate" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <label>備註（選填）</label>
+                <input type="text" id="award-note" placeholder="例如：缺席補領">
+                <button class="btn" onclick="assignGift()">確認登記</button>
+            </div>
+        `;
+
+        // 歷史領獎紀錄
+        html += `<div class="group-frame"><div class="group-header">所有領獎紀錄（${giftRecords.length} 筆）</div>`;
+        if (giftRecords.length === 0) {
+            html += `<p style="text-align:center; color:#999; padding:10px;">尚無紀錄</p>`;
+        } else {
+            const sorted = [...giftRecords].sort((a, b) => {
+                if (a.status === '待領取' && b.status !== '待領取') return -1;
+                if (a.status !== '待領取' && b.status === '待領取') return 1;
+                return 0;
+            });
+            sorted.forEach(r => {
+                const isPending = r.status === '待領取';
+                html += `
+                    <div class="card" style="flex-direction:column; align-items:flex-start; background:${isPending ? '#FFF8E1' : '#F9F9F9'}; border:1px solid ${isPending ? '#FFD54F' : 'rgba(0,0,0,0.03)'};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
+                            <span style="font-weight:bold;">${r.name} <small style="color:#999;">(${r.amId})</small></span>
+                            <span class="tag ${isPending ? 'tag-plus1' : 'tag-green'}" style="${isPending ? 'background:#FF8F00; color:#fff;' : ''}">
+                                ${isPending ? '⏳ 待領取' : '✅ 已領取'}
+                            </span>
+                        </div>
+                        <div style="font-size:13px; color:#666; margin-bottom:4px;">🎁 ${r.giftName}</div>
+                        <div style="font-size:11px; color:#999;">
+                            登記：${r.registerDate}${r.claimDate ? ` ｜ 領取：${r.claimDate}` : ''}${r.note ? ` ｜ ${r.note}` : ''}
+                        </div>
+                        ${isPending ? `<button class="btn" style="margin-top:10px;" onclick="confirmGift(${r.row})">確認已領取</button>` : ''}
+                    </div>
+                `;
+            });
+        }
+        html += `</div>`;
+
+        document.getElementById('award-content').innerHTML = html;
+    }
+
+    function selectForAward(amId) {
+        const sel = document.getElementById('award-amId');
+        if (!sel) return;
+        sel.value = amId;
+        const wrap = document.getElementById('award-form-wrap');
+        if (wrap) wrap.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function toggleAwardClaimDate() {
+        const status = document.getElementById('award-status').value;
+        document.getElementById('award-claim-date-wrap').style.display = status === '已領取' ? 'block' : 'none';
+    }
+
+    async function assignGift() {
+        const sel      = document.getElementById('award-amId');
+        const amId     = sel.value;
+        const opt      = sel.options[sel.selectedIndex];
+        const name     = opt ? opt.dataset.name : '';
+        const group    = opt ? opt.dataset.group : '';
+        const giftName = document.getElementById('award-gift').value;
+        const status   = document.getElementById('award-status').value;
+        const claimDate= document.getElementById('award-claimDate') ? document.getElementById('award-claimDate').value : '';
+        const note     = document.getElementById('award-note').value;
+
+        if (!amId || !giftName) { showToast('請選擇成員與禮物'); return; }
+
+        try {
+            const res = await apiCall('assignGift', { amId, name, group, giftName, status, claimDate, note });
+            showToast(res.message);
+            if (res.success) { giftDataCache = null; await loadGiftData(); }
+        } catch(e) { showToast('連線失敗'); }
+    }
+
+    async function confirmGift(row) {
+        const claimDate = new Date().toISOString().split('T')[0];
+        try {
+            const res = await apiCall('confirmGift', { row, claimDate });
+            showToast(res.message);
+            if (res.success) { giftDataCache = null; await loadGiftData(); }
+        } catch(e) { showToast('連線失敗'); }
+    }
+
 </script>
 </body>
 </html>
