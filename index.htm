@@ -446,10 +446,20 @@
                         <div class="yanqun-detail" id="${detailId}">
                             ${g.influencers.map(inv => `<div class="inv-group">
                                 <div class="inv-group-title">${inv.name} <span style="font-weight:normal;font-size:12px;color:#888;">（總分 ${inv.totalPoints}）</span></div>
-                                ${inv.recruits.map(r => `<div class="inv-recruit-row ${r.points===2?'effective':''}">
-                                    <span>└ 推薦 <b>${r.name}</b></span>
-                                    <span class="tag ${r.points===2?'tag-green':'tag-plus1'}">${r.points===2?'有效推薦 +2':'推薦 +1'}</span>
-                                </div>`).join('')}
+                                
+                                ${inv.recruits.map(r => `
+    <div class="inv-recruit-row ${r.points===2?'effective':''}" style="flex-direction:column;align-items:flex-start;gap:4px;">
+        <div style="display:flex;justify-content:space-between;width:100%;">
+            <span>└ 推薦 <b>${r.name}</b></span>
+            <span class="tag ${r.points===2?'tag-green':'tag-plus1'}">${r.points===2?'有效推薦 +2':'推薦 +1'}</span>
+        </div>
+        <div style="font-size:11px;color:#999;padding-left:12px;">
+            📅 ${r.recDate} 登記${r.effDate ? ` | 🏆 ${r.effDate} 達標` : ''}
+        </div>
+    </div>
+`).join('')}
+                            
+                            
                             </div>`).join('')}
                         </div>
                     </div>`;
