@@ -83,10 +83,43 @@
         .award-recruit-row.effective { border-left-color:#2E7D32; }
         .award-recruit-name { font-size:14px; font-weight:bold; margin-bottom:6px; }
         .award-status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; }
+        /* 頒獎三種狀態色碼 */
         .award-status-claimed { font-size:12px; color:#2E7D32; font-weight:bold; }
         .award-status-pending { font-size:12px; color:#FF8F00; font-weight:bold; }
+        .award-status-none    { font-size:12px; color:#999; font-weight:bold; }
+        .award-recruit-row.status-claimed { background:#F1F8F1; border-left-color:#2E7D32; }
+        .award-recruit-row.status-pending { background:#FFF8EE; border-left-color:#FF8F00; }
+        .award-recruit-row.status-none    { background:#FAFAFA; border-left-color:#CCC; }
         .award-btn-sm { font-size:11px; background:#000; color:#fff; border:none; border-radius:6px; padding:4px 12px; cursor:pointer; font-weight:bold; }
         .award-btn-green { font-size:11px; background:#2E7D32; color:#fff; border:none; border-radius:6px; padding:4px 12px; cursor:pointer; font-weight:bold; }
+
+        /* 競賽狀態 Banner */
+        .contest-banner { padding:12px 18px; border-radius:12px; margin-bottom:18px; font-size:14px; font-weight:bold; text-align:center; }
+        .contest-banner.active   { background:#E8F5E9; color:#2E7D32; }
+        .contest-banner.pending  { background:#FFF8E1; color:#F57F17; }
+        .contest-banner.closed   { background:#FFEBEE; color:#C62828; }
+
+        /* 雁群小組 - 整組分數 */
+        .group-score-bar { display:flex; gap:12px; margin-bottom:14px; background:#F8F9FA; border-radius:10px; padding:10px 14px; }
+        .group-score-item { text-align:center; flex:1; }
+        .group-score-num { font-size:22px; font-weight:800; color:var(--accent); line-height:1.2; }
+        .group-score-label { font-size:11px; color:#999; margin-top:2px; }
+
+        /* 已審核紀錄 */
+        .reviewed-item { background:#FAFAFA; border:1px solid #EEE; border-radius:10px; padding:12px; margin-bottom:10px; }
+        .reviewed-item.approved { border-left:3px solid #2E7D32; }
+        .reviewed-item.rejected { border-left:3px solid #D32F2F; }
+        .reviewed-status { font-size:12px; font-weight:bold; }
+        .reviewed-status.approved { color:#2E7D32; }
+        .reviewed-status.rejected { color:#D32F2F; }
+
+        /* 競賽設定 */
+        .contest-option { display:flex; align-items:center; gap:12px; padding:14px; border:2px solid #EEE; border-radius:12px; margin-bottom:10px; cursor:pointer; transition:border-color .2s; }
+        .contest-option.selected { border-color:#000; background:#F8F8F8; }
+        .contest-option-dot { width:18px; height:18px; border-radius:50%; border:2px solid #CCC; flex-shrink:0; }
+        .contest-option.selected .contest-option-dot { background:#000; border-color:#000; }
+        .contest-option-label { font-size:14px; font-weight:bold; }
+        .contest-option-desc  { font-size:12px; color:#999; }
     </style>
 </head>
 <body>
@@ -156,12 +189,15 @@
         </form>
     </div>
 
+    <!-- 成功推薦頁 -->
     <div id="ref" class="page">
         <div class="profile-tags" id="profile-tags">
             <span class="profile-tag-item" id="profile-classroom"></span>
             <span class="profile-tag-divider" id="profile-divider" style="display:none">｜</span>
             <span class="profile-tag-item" id="profile-group"></span>
         </div>
+        <!-- 競賽狀態 Banner -->
+        <div id="contest-banner-ref" class="contest-banner" style="display:none;"></div>
         <h2 style="margin-top:0;">成功推薦登記</h2>
         <form id="refForm">
             <label>推薦人</label><select id="inv-select" required></select>
@@ -182,7 +218,10 @@
         </form>
     </div>
 
+    <!-- 增加消費頁 -->
     <div id="cons" class="page" style="display:none">
+        <!-- 競賽狀態 Banner -->
+        <div id="contest-banner-cons" class="contest-banner" style="display:none;"></div>
         <h2 style="margin-top:0;">增加消費金額</h2>
         <div id="member-list"></div>
         <div id="cons-form-area" style="display:none;margin-top:30px;border-top:1px dashed #DDD;padding-top:25px;">
@@ -203,11 +242,13 @@
         </div>
     </div>
 
+    <!-- 雁群小組頁 -->
     <div id="group" class="page" style="display:none">
         <h2 style="margin-top:0;">雁群小組戰報</h2>
         <div id="group-perf-list"></div>
     </div>
 
+    <!-- 會長專區 -->
     <div id="adm" class="page" style="display:none">
         <h2 style="margin-top:0;">會長專區</h2>
         <div id="admin-content"></div>
@@ -216,12 +257,13 @@
 
 <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
-    let state = { uid: "" };
+    let state = { uid: "", reviewerName: "" };
     let adminDataCache = null;
     let giftDataCache = null;
     let modalPayload = {};
     let confirmPayload = {};
     let selectedFiles = { ref: [], cons: [] };
+    let contestStatusCache = null;
 
     function showToast(msg) {
         document.getElementById('toast-msg').innerText = msg;
@@ -280,6 +322,37 @@
         reader.readAsDataURL(file);
     }
 
+    // 顯示競賽狀態 Banner
+    function applyContestBanner(contestStatus) {
+        contestStatusCache = contestStatus;
+        const bannerIds = ['contest-banner-ref', 'contest-banner-cons'];
+        bannerIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (!contestStatus || contestStatus.status === 'active') {
+                el.style.display = 'none';
+                return;
+            }
+            el.style.display = 'block';
+            el.className = 'contest-banner ' + contestStatus.status;
+            if (contestStatus.status === 'pending') {
+                el.innerHTML = '⏳ 目前競賽尚未開始，暫時無法提交';
+            } else {
+                el.innerHTML = '🔒 競賽已截止，無法繼續提交';
+            }
+        });
+
+        // 如非 active，停用提交按鈕
+        const isActive = !contestStatus || contestStatus.status === 'active';
+        ['btn-ref', 'btn-cons'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.disabled = !isActive;
+                btn.style.opacity = isActive ? '1' : '0.4';
+            }
+        });
+    }
+
     async function refreshData() {
         try {
             const res = await apiCall('getInitData');
@@ -294,6 +367,10 @@
                 const d = res.data;
                 document.getElementById('reg-page').style.display = 'none';
                 document.getElementById('main-tabs').style.display = 'flex';
+
+                // 競賽狀態 Banner
+                applyContestBanner(d.contestStatus);
+
                 const classroom = d.myProfile.classroom || "";
                 const group = d.myProfile.group || "";
                 const classroomEl = document.getElementById('profile-classroom');
@@ -302,7 +379,10 @@
                 if (classroom) { classroomEl.innerText = `所屬教室：${classroom}`; classroomEl.style.display = 'inline'; } else { classroomEl.style.display = 'none'; }
                 if (group) { groupEl.innerText = `所屬雁群：${group === '' ? '多重授權' : group}`; groupEl.style.display = 'inline'; } else { groupEl.style.display = 'none'; }
                 dividerEl.style.display = (classroom && group) ? 'inline' : 'none';
+
                 document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+
+                // ── 增加消費：顯示推薦人 ──
                 const groupedNewbies = d.newbies.reduce((acc, obj) => { if (!acc[obj.group]) acc[obj.group] = []; acc[obj.group].push(obj); return acc; }, {});
                 let consHtml = "";
                 for (const gName in groupedNewbies) {
@@ -310,13 +390,19 @@
                     consHtml += groupedNewbies[gName].map(m => {
                         const isReached = m.isReached;
                         return `<div class="card" onclick="${isReached ? '' : `selectForCons('${m.tarId}','${m.name}','${m.invId}','${m.invName}')`}" style="${isReached ? 'opacity:0.5;background:#F0F0F0;' : ''}">
-                            <div><b>${m.name || '未知'}</b> <small>(${m.tarId})</small><br><small>累計 $${m.spent}</small></div>
+                            <div>
+                                <b>${m.name || '未知'}</b> <small>(${m.tarId})</small>
+                                <br><small style="color:#888;">由 <b>${m.invName}</b> 推薦</small>
+                                <br><small>累計 $${m.spent}</small>
+                            </div>
                             <div style="color:var(--accent);font-weight:bold;">${isReached ? '✅ 已達標' : '補填 ➔'}</div>
                         </div>`;
                     }).join('');
                     consHtml += `</div>`;
                 }
                 document.getElementById('member-list').innerHTML = consHtml || '<p style="text-align:center;color:#999;padding:20px;">目前無名單</p>';
+
+                // ── 雁群小組：加入整組總分 ──
                 let groupHtml = d.groupPerf.map(g => {
                     let influencersHtml = g.influencers.map(inv => {
                         let recruitsHtml = Object.values(inv.recruits).map(r => `
@@ -332,10 +418,32 @@
                             <span style="font-size:13px;color:#666;">推薦:${inv.count} | <b style="color:var(--accent)">總分:${inv.totalPoints}</b></span>
                         </div>${recruitsHtml}</div>`;
                     }).join('');
-                    return `<div class="group-frame"><div class="group-header">${g.groupName} 小組</div>${influencersHtml}</div>`;
+
+                    return `<div class="group-frame">
+                        <div class="group-header">${g.groupName} 小組</div>
+                        <div class="group-score-bar">
+                            <div class="group-score-item">
+                                <div class="group-score-num">${g.groupTotalPoints}</div>
+                                <div class="group-score-label">總分</div>
+                            </div>
+                            <div class="group-score-item">
+                                <div class="group-score-num" style="color:#333;">${g.groupTotalReferrals}</div>
+                                <div class="group-score-label">推薦人數</div>
+                            </div>
+                            <div class="group-score-item">
+                                <div class="group-score-num" style="color:#2E7D32;">${g.groupEffectiveCount}</div>
+                                <div class="group-score-label">有效推薦</div>
+                            </div>
+                        </div>
+                        ${influencersHtml}
+                    </div>`;
                 }).join('');
                 document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無推薦紀錄</p>';
-                if (d.isPresident) document.getElementById('t-adm').style.display = 'block';
+
+                if (d.isPresident) {
+                    document.getElementById('t-adm').style.display = 'block';
+                    state.reviewerName = d.myProfile.name || "會長";
+                }
             }
         } catch(e) { console.error("Refresh Error:", e); showToast("數據載入異常，請重整"); }
         finally { document.getElementById('loading').style.display = 'none'; }
@@ -387,15 +495,18 @@
     }
 
     function renderAdminTab(tabName) {
-        if (!adminDataCache && tabName !== 'award') return;
+        if (!adminDataCache && tabName !== 'award' && tabName !== 'contest') return;
         const cont = document.getElementById('admin-content');
         let html = `
-            <div class="sub-tab-bar">
-                <div class="sub-tab ${tabName==='pending'?'active':''}" onclick="renderAdminTab('pending')">待審核</div>
-                <div class="sub-tab ${tabName==='stats'?'active':''}" onclick="renderAdminTab('stats')">績效統計</div>
-                <div class="sub-tab ${tabName==='yanqun'?'active':''}" onclick="renderAdminTab('yanqun')">雁群統計</div>
-                <div class="sub-tab ${tabName==='roster'?'active':''}" onclick="renderAdminTab('roster')">參賽名單</div>
-                <div class="sub-tab ${tabName==='award'?'active':''}" onclick="renderAdminTab('award')">頒獎管理</div>
+            <div class="sub-tab-bar" style="grid-template-columns:repeat(3,1fr);">
+                <div class="sub-tab ${tabName==='pending'?'active':''}"   onclick="renderAdminTab('pending')">待審核</div>
+                <div class="sub-tab ${tabName==='reviewed'?'active':''}"  onclick="renderAdminTab('reviewed')">審核紀錄</div>
+                <div class="sub-tab ${tabName==='stats'?'active':''}"     onclick="renderAdminTab('stats')">績效統計</div>
+                <div class="sub-tab ${tabName==='yanqun'?'active':''}"    onclick="renderAdminTab('yanqun')">雁群統計</div>
+                <div class="sub-tab ${tabName==='roster'?'active':''}"    onclick="renderAdminTab('roster')">參賽名單</div>
+                <div class="sub-tab ${tabName==='award'?'active':''}"     onclick="renderAdminTab('award')">頒獎管理</div>
+                <div class="sub-tab ${tabName==='contest'?'active':''}"   onclick="renderAdminTab('contest')">競賽設定</div>
+                <div class="sub-tab" style="cursor:default;"></div>
                 <div class="sub-tab" style="cursor:default;"></div>
             </div>`;
 
@@ -408,7 +519,7 @@
                     html += `<div class="black-header">[ ${g.groupName} ] 待審核</div><div class="card-body">`;
                     g.items.forEach(r => {
                         html += `<div style="margin-bottom:20px;border-bottom:1px dashed #EEE;padding-bottom:15px;">
-                            <div style="font-size:16px;font-weight:bold;margin-bottom:10px;">${r.invName} ➔ ${r.tarName} <span style="font-weight:normal;color:#666;">($${r.amt})</span></div>
+                            <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">${r.invName} ➔ ${r.tarName} <span style="font-weight:normal;color:#666;">($${r.amt})</span></div>
                             <div style="font-size:12px;color:#999;margin-bottom:10px;">類型: ${r.type || '未標記'}</div>
                             ${r.img ? r.img.split(',').map((url, i) => `<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-bottom:8px;padding:10px;height:auto;" onclick="viewImage('${url.trim()}')">📸 查看憑證 ${r.img.split(',').length > 1 ? (i+1) : ''}</button>`).join('') : ''}
                             <div style="display:flex;gap:10px;">
@@ -419,6 +530,31 @@
                     html += `</div>`;
                 });
             }
+
+        } else if (tabName === 'reviewed') {
+            // ── 已審核紀錄 ──
+            const reviewed = (adminDataCache.reviewedItems || []).sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt));
+            if (reviewed.length === 0) {
+                html += '<p style="text-align:center;padding:30px;color:#999;">目前無已審核紀錄</p>';
+            } else {
+                reviewed.forEach(r => {
+                    const isApproved = r.status === '通過';
+                    html += `<div class="reviewed-item ${isApproved ? 'approved' : 'rejected'}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <span style="font-weight:bold;font-size:14px;">${r.invName} ➔ ${r.tarName}</span>
+                            <span class="reviewed-status ${isApproved ? 'approved' : 'rejected'}">${isApproved ? '✅ 通過' : '❌ 退回'}</span>
+                        </div>
+                        <div style="font-size:12px;color:#999;">
+                            類型: ${r.type || '—'} ｜ $${r.amt} ｜ ${r.groupName}
+                        </div>
+                        <div style="font-size:12px;color:#999;margin-top:2px;">
+                            審核人: <b>${r.reviewedBy}</b> ｜ ${r.reviewedAt}
+                        </div>
+                        ${r.img ? `<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-top:8px;padding:8px;font-size:12px;" onclick="viewImage('${r.img.split(',')[0].trim()}')">📸 查看憑證</button>` : ''}
+                    </div>`;
+                });
+            }
+
         } else if (tabName === 'stats') {
             const stats = adminDataCache.stats || { totalMembers:0, totalReferrals:0, totalEffective:0 };
             html += `<div class="stats-grid">
@@ -426,6 +562,7 @@
                 <div class="stat-card"><div class="stat-number">${stats.totalReferrals}</div><div class="stat-label">總推薦筆數</div></div>
                 <div class="stat-card"><div class="stat-number">${stats.totalEffective}</div><div class="stat-label">總達標人數</div></div>
             </div>`;
+
         } else if (tabName === 'yanqun') {
             const yanqunStats = adminDataCache.yanqunStats || [];
             if (yanqunStats.length === 0) {
@@ -446,25 +583,22 @@
                         <div class="yanqun-detail" id="${detailId}">
                             ${g.influencers.map(inv => `<div class="inv-group">
                                 <div class="inv-group-title">${inv.name} <span style="font-weight:normal;font-size:12px;color:#888;">（總分 ${inv.totalPoints}）</span></div>
-                                
                                 ${inv.recruits.map(r => `
-    <div class="inv-recruit-row ${r.points===2?'effective':''}" style="flex-direction:column;align-items:flex-start;gap:4px;">
-        <div style="display:flex;justify-content:space-between;width:100%;">
-            <span>└ 推薦 <b>${r.name}</b></span>
-            <span class="tag ${r.points===2?'tag-green':'tag-plus1'}">${r.points===2?'有效推薦 +2':'推薦 +1'}</span>
-        </div>
-        <div style="font-size:11px;color:#999;padding-left:12px;">
-            📅 ${r.recDate} 登記${r.effDate ? ` | 🏆 ${r.effDate} 達標` : ''}
-        </div>
-    </div>
-`).join('')}
-                            
-                            
+                                    <div class="inv-recruit-row ${r.points===2?'effective':''}" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                                        <div style="display:flex;justify-content:space-between;width:100%;">
+                                            <span>└ 推薦 <b>${r.name}</b></span>
+                                            <span class="tag ${r.points===2?'tag-green':'tag-plus1'}">${r.points===2?'有效推薦 +2':'推薦 +1'}</span>
+                                        </div>
+                                        <div style="font-size:11px;color:#999;padding-left:12px;">
+                                            📅 ${r.recDate} 登記${r.effDate ? ` | 🏆 ${r.effDate} 達標` : ''}
+                                        </div>
+                                    </div>`).join('')}
                             </div>`).join('')}
                         </div>
                     </div>`;
                 });
             }
+
         } else if (tabName === 'roster') {
             const groupedRoster = adminDataCache.groupedRoster || {};
             const totalCount = adminDataCache.allUsers ? adminDataCache.allUsers.length : 0;
@@ -476,12 +610,64 @@
                     ${members.map(u => `<div class="roster-member"><span class="roster-member-name">${u.name}</span><span class="roster-member-id">(${u.amId})</span></div>`).join('')}
                 </div>`;
             }
+
         } else if (tabName === 'award') {
             html += `<div id="award-content"><p style="text-align:center;color:#999;padding:20px;">載入中...</p></div>`;
+
+        } else if (tabName === 'contest') {
+            // ── 競賽設定 ──
+            const current = contestStatusCache || { status: 'active' };
+            html += `
+                <div class="group-frame">
+                    <div class="group-header">競賽狀態設定</div>
+                    <div class="contest-option ${current.status==='pending'?'selected':''}" onclick="selectContestOption('pending',this)">
+                        <div class="contest-option-dot"></div>
+                        <div>
+                            <div class="contest-option-label">⏳ 尚未開始</div>
+                            <div class="contest-option-desc">所有成員無法提交推薦</div>
+                        </div>
+                    </div>
+                    <div class="contest-option ${current.status==='active'?'selected':''}" onclick="selectContestOption('active',this)">
+                        <div class="contest-option-dot"></div>
+                        <div>
+                            <div class="contest-option-label">✅ 競賽進行中</div>
+                            <div class="contest-option-desc">開放所有成員提交推薦</div>
+                        </div>
+                    </div>
+                    <div class="contest-option ${current.status==='closed'?'selected':''}" onclick="selectContestOption('closed',this)">
+                        <div class="contest-option-dot"></div>
+                        <div>
+                            <div class="contest-option-label">🔒 競賽已截止</div>
+                            <div class="contest-option-desc">所有成員無法提交推薦</div>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="saveContestStatus()" style="margin-top:20px;">儲存設定</button>
+                </div>`;
         }
 
         cont.innerHTML = html;
         if (tabName === 'award') setTimeout(() => loadGiftData(), 50);
+    }
+
+    // 競賽設定選項
+    let selectedContestStatus = null;
+    function selectContestOption(status, el) {
+        selectedContestStatus = status;
+        document.querySelectorAll('.contest-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    async function saveContestStatus() {
+        if (!selectedContestStatus) { showToast('請先選擇狀態'); return; }
+        const labelMap = { pending: '尚未開始', active: '競賽進行中', closed: '競賽已截止' };
+        try {
+            const res = await apiCall('setContestStatus', { status: selectedContestStatus, label: labelMap[selectedContestStatus] });
+            showToast(res.message);
+            if (res.success) {
+                contestStatusCache = { status: selectedContestStatus, label: labelMap[selectedContestStatus] };
+                applyContestBanner(contestStatusCache);
+            }
+        } catch(e) { showToast('儲存失敗'); }
     }
 
     function toggleDetail(id, btn) {
@@ -499,7 +685,7 @@
     async function processReview(row, action) {
         if (!confirm("確定執行此操作？")) return;
         try {
-            const res = await apiCall(action, { row });
+            const res = await apiCall(action, { row, reviewerName: state.reviewerName });
             showToast(res.message);
             setTimeout(() => { loadAdmin(); refreshData(); }, 1000);
         } catch(e) { showToast("操作失敗"); }
@@ -559,6 +745,11 @@
 
     async function handleForm(e, type) {
         e.preventDefault();
+        // 前端再次確認競賽狀態
+        if (contestStatusCache && contestStatusCache.status !== 'active') {
+            showToast(contestStatusCache.status === 'pending' ? '競賽尚未開始' : '競賽已截止');
+            return;
+        }
         const btnId = type === 'ref' ? 'btn-ref' : 'btn-cons';
         const btn = document.getElementById(btnId);
         const originalText = type === 'ref' ? "提交數據" : "確認提交";
@@ -624,18 +815,22 @@
                         inv.recruits.forEach(rec => {
                             const isEffective = rec.points === 2;
                             const ar = rec.awardRecord;
-                            let statusHtml = '';
+                            let statusHtml = '', rowClass = 'status-none';
                             if (ar) {
                                 if (ar.status === '已領取') {
+                                    rowClass = 'status-claimed';
                                     statusHtml = `<span class="award-status-claimed">✅ ${ar.claimDate} 領取 ${ar.giftName}</span>`;
                                 } else {
+                                    rowClass = 'status-pending';
                                     statusHtml = `<span class="award-status-pending">⏳ 待領取（${ar.registerDate} 登記）</span>
                                         <button class="award-btn-green" onclick="openConfirmModal(${ar.row},'${rec.tarName}')">確認已領取</button>`;
                                 }
                             } else {
-                                statusHtml = `<button class="award-btn-sm" onclick="openAwardModal('${inv.invId}','${rec.tarId}','${rec.tarName}','${inv.invName}')">登記禮物 ➔</button>`;
+                                rowClass = 'status-none';
+                                statusHtml = `<span class="award-status-none">未登記</span>
+                                    <button class="award-btn-sm" onclick="openAwardModal('${inv.invId}','${rec.tarId}','${rec.tarName}','${inv.invName}')">登記禮物 ➔</button>`;
                             }
-                            html += `<div class="award-recruit-row ${isEffective?'effective':''}">
+                            html += `<div class="award-recruit-row ${isEffective?'effective':''} ${rowClass}">
                                 <div class="award-recruit-name">${rec.tarName}
                                     <span class="tag ${isEffective?'tag-green':'tag-plus1'}" style="margin-left:6px;">${isEffective?'有效推薦':'一般推薦'}</span>
                                 </div>
