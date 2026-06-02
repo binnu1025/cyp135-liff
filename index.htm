@@ -532,26 +532,50 @@
             }
 
         } else if (tabName === 'reviewed') {
-            // ── 已審核紀錄 ──
-            const reviewed = (adminDataCache.reviewedItems || []).sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt));
+            // ── 已審核紀錄：按小組分群，通過在上退回在下 ──
+            const reviewed = adminDataCache.reviewedItems || [];
             if (reviewed.length === 0) {
                 html += '<p style="text-align:center;padding:30px;color:#999;">目前無已審核紀錄</p>';
             } else {
+                // 按小組分群
+                const reviewedByGroup = {};
                 reviewed.forEach(r => {
-                    const isApproved = r.status === '通過';
-                    html += `<div class="reviewed-item ${isApproved ? 'approved' : 'rejected'}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                            <span style="font-weight:bold;font-size:14px;">${r.invName} ➔ ${r.tarName}</span>
-                            <span class="reviewed-status ${isApproved ? 'approved' : 'rejected'}">${isApproved ? '✅ 通過' : '❌ 退回'}</span>
-                        </div>
-                        <div style="font-size:12px;color:#999;">
-                            類型: ${r.type || '—'} ｜ $${r.amt} ｜ ${r.groupName}
-                        </div>
-                        <div style="font-size:12px;color:#999;margin-top:2px;">
-                            審核人: <b>${r.reviewedBy}</b> ｜ ${r.reviewedAt}
-                        </div>
-                        ${r.img ? `<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-top:8px;padding:8px;font-size:12px;" onclick="viewImage('${r.img.split(',')[0].trim()}')">📸 查看憑證</button>` : ''}
-                    </div>`;
+                    const g = r.groupName || '未知小組';
+                    if (!reviewedByGroup[g]) reviewedByGroup[g] = [];
+                    reviewedByGroup[g].push(r);
+                });
+                // 每組內：通過排前，退回排後；同狀態內按時間新到舊
+                Object.keys(reviewedByGroup).forEach(gName => {
+                    reviewedByGroup[gName].sort((a, b) => {
+                        if (a.status !== b.status) return a.status === '通過' ? -1 : 1;
+                        return b.reviewedAt.localeCompare(a.reviewedAt);
+                    });
+                    const items = reviewedByGroup[gName];
+                    const approvedCount = items.filter(r => r.status === '通過').length;
+                    const rejectedCount = items.length - approvedCount;
+                    html += `<div class="group-frame">
+                        <div class="group-header">${gName} 小組
+                            <span style="margin-left:auto;font-size:12px;font-weight:normal;color:#666;">
+                                ✅ ${approvedCount} 通過　❌ ${rejectedCount} 退回
+                            </span>
+                        </div>`;
+                    items.forEach(r => {
+                        const isApproved = r.status === '通過';
+                        html += `<div class="reviewed-item ${isApproved ? 'approved' : 'rejected'}">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <span style="font-weight:bold;font-size:14px;">${r.invName} ➔ ${r.tarName}</span>
+                                <span class="reviewed-status ${isApproved ? 'approved' : 'rejected'}">${isApproved ? '✅ 通過' : '❌ 退回'}</span>
+                            </div>
+                            <div style="font-size:12px;color:#999;">
+                                類型: ${r.type || '—'} ｜ $${r.amt}
+                            </div>
+                            <div style="font-size:12px;color:#999;margin-top:2px;">
+                                審核人: <b>${r.reviewedBy}</b> ｜ ${r.reviewedAt}
+                            </div>
+                            ${r.img ? r.img.split(',').map((url, i) => `<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-top:8px;padding:8px;font-size:12px;" onclick="viewImage('${url.trim()}')">📸 查看憑證${r.img.split(',').length > 1 ? ` ${i+1}` : ''}</button>`).join('') : ''}
+                        </div>`;
+                    });
+                    html += `</div>`;
                 });
             }
 
