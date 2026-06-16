@@ -453,42 +453,62 @@ async function refreshData() {
             });
             document.getElementById('member-list').innerHTML = consHtml || '<p style="text-align:center;color:#999;padding:20px;">目前無名單</p>';
 
-            // 雁群小組
-            let groupHtml = d.groupPerf.map(function(g) {
-                let influencersHtml = g.influencers.map(function(inv) {
-                    let recruitsHtml = Object.values(inv.recruits).map(function(r) {
-                        return '<div class="recruit-detail"><div style="display:flex;justify-content:space-between;"><span>推薦 <b>' + r.name + '</b></span><span class="tag ' + (r.points === 2 ? 'tag-green' : 'tag-plus1') + '">' + (r.points === 2 ? '有效推薦 +2' : '+1') + '</span></div><div style="font-size:11px;color:#999;margin-top:4px;">📅 登記: ' + r.recDate + (r.effDate ? ' | 🏆 達標: ' + r.effDate : ' (累計 $' + r.spent + ')') + '</div></div>';
-                    }).join('');
-                    return '<div class="perf-item"><div class="perf-title-row"><span style="font-weight:bold;font-size:16px;">' + inv.name + '</span><span style="font-size:13px;color:#666;">推薦:' + inv.count + ' | <b style="color:var(--accent)">總分:' + inv.totalPoints + '</b></span></div>' + recruitsHtml + '</div>';
-                }).join('');
+            // 雁群小組：先顯示成員名單（從名冊），再顯示推薦戰報（從推薦總表）
+            const groupMembers = d.groupMembers || [];
+            const groupPerfMap = {};
+            (d.groupPerf || []).forEach(function(g) { groupPerfMap[g.groupName] = g; });
 
-                // 成員名單區塊
-                const members = g.members || [];
+            // 合併所有出現過的雁群（名冊有人 or 有推薦紀錄）
+            const allGroupNames = [];
+            groupMembers.forEach(function(g) { if (!allGroupNames.includes(g.groupName)) allGroupNames.push(g.groupName); });
+            (d.groupPerf || []).forEach(function(g) { if (!allGroupNames.includes(g.groupName)) allGroupNames.push(g.groupName); });
+
+            let groupHtml = allGroupNames.map(function(gName) {
+                const memberData = groupMembers.find(function(g) { return g.groupName === gName; }) || { members: [] };
+                const perfData = groupPerfMap[gName] || null;
+                const members = memberData.members;
+
+                // 成員收合區塊
                 const confirmedCount = members.filter(function(m) { return m.status === '是'; }).length;
                 const pendingCount = members.filter(function(m) { return m.status === '待確認'; }).length;
-                const memberPanelId = 'member-panel-' + g.groupName.replace(/\s/g,'');
+                const memberPanelId = 'member-panel-' + gName.replace(/[^a-zA-Z0-9]/g, '');
                 const memberToggleLabel = '成員 ' + members.length + ' 人（✅ ' + confirmedCount + ' 已確認　⏳ ' + pendingCount + ' 審核中）';
                 const memberTagsHtml = members.map(function(m) {
                     const cls = m.status === '是' ? 'confirmed' : 'pending';
                     const icon = m.status === '是' ? '✅' : '⏳';
                     return '<span class="member-tag ' + cls + '">' + icon + ' ' + m.name + '</span>';
                 }).join('');
+                const memberBlock = members.length > 0
+                    ? '<button class="member-toggle" onclick="toggleMemberPanel(' + "'" + memberPanelId + "'" + ',this)"><span>' + memberToggleLabel + '</span><span>▼</span></button>' +
+                      '<div class="member-panel" id="' + memberPanelId + '">' + memberTagsHtml + '</div>'
+                    : '';
+
+                // 推薦戰報區塊
+                let influencersHtml = '';
+                let scoreBar = '';
+                if (perfData) {
+                    scoreBar = '<div class="group-score-bar">' +
+                        '<div class="group-score-item"><div class="group-score-num">' + perfData.groupTotalPoints + '</div><div class="group-score-label">總分</div></div>' +
+                        '<div class="group-score-item"><div class="group-score-num" style="color:#333;">' + perfData.groupTotalReferrals + '</div><div class="group-score-label">推薦人數</div></div>' +
+                        '<div class="group-score-item"><div class="group-score-num" style="color:#2E7D32;">' + perfData.groupEffectiveCount + '</div><div class="group-score-label">有效推薦</div></div>' +
+                    '</div>';
+                    influencersHtml = perfData.influencers.map(function(inv) {
+                        const recruitsHtml = Object.values(inv.recruits).map(function(r) {
+                            return '<div class="recruit-detail"><div style="display:flex;justify-content:space-between;"><span>推薦 <b>' + r.name + '</b></span><span class="tag ' + (r.points === 2 ? 'tag-green' : 'tag-plus1') + '">' + (r.points === 2 ? '有效推薦 +2' : '+1') + '</span></div><div style="font-size:11px;color:#999;margin-top:4px;">📅 登記: ' + r.recDate + (r.effDate ? ' | 🏆 達標: ' + r.effDate : ' (累計 $' + r.spent + ')') + '</div></div>';
+                        }).join('');
+                        return '<div class="perf-item"><div class="perf-title-row"><span style="font-weight:bold;font-size:16px;">' + inv.name + '</span><span style="font-size:13px;color:#666;">推薦:' + inv.count + ' | <b style="color:var(--accent)">總分:' + inv.totalPoints + '</b></span></div>' + recruitsHtml + '</div>';
+                    }).join('');
+                }
 
                 return '<div class="group-frame">' +
-                    '<div class="group-header">' + g.groupName + ' 小組</div>' +
-                    '<div class="group-score-bar">' +
-                        '<div class="group-score-item"><div class="group-score-num">' + g.groupTotalPoints + '</div><div class="group-score-label">總分</div></div>' +
-                        '<div class="group-score-item"><div class="group-score-num" style="color:#333;">' + g.groupTotalReferrals + '</div><div class="group-score-label">推薦人數</div></div>' +
-                        '<div class="group-score-item"><div class="group-score-num" style="color:#2E7D32;">' + g.groupEffectiveCount + '</div><div class="group-score-label">有效推薦</div></div>' +
-                    '</div>' +
-                    '<button class="member-toggle" onclick="toggleMemberPanel(' + "'" + memberPanelId + "'" + ',this)">' +
-                        '<span>' + memberToggleLabel + '</span><span>▼</span>' +
-                    '</button>' +
-                    '<div class="member-panel" id="' + memberPanelId + '">' + memberTagsHtml + '</div>' +
+                    '<div class="group-header">' + gName + ' 小組</div>' +
+                    scoreBar +
+                    memberBlock +
                     influencersHtml +
                 '</div>';
             }).join('');
-            document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無推薦紀錄</p>';
+
+            document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無資料</p>';
 
             if (d.isPresident) {
                 document.getElementById('t-adm').style.display = 'block';
