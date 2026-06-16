@@ -91,6 +91,13 @@
         .contest-banner.pending{background:#FFF8E1;color:#F57F17;}
         .contest-banner.closed{background:#FFEBEE;color:#C62828;}
         .group-score-bar{display:flex;gap:12px;margin-bottom:14px;background:#F8F9FA;border-radius:10px;padding:10px 14px;}
+        .member-toggle{width:100%;background:none;border:none;border-top:1px solid #EEE;padding:10px 14px;text-align:left;font-size:13px;font-weight:bold;color:#555;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:0;}
+        .member-toggle:hover{background:#F8F9FA;}
+        .member-panel{display:none;padding:12px 14px;border-top:1px solid #F0F0F0;flex-wrap:wrap;gap:8px;}
+        .member-panel.open{display:flex;}
+        .member-tag{display:inline-flex;align-items:center;gap:4px;background:#F4F4F4;border-radius:20px;padding:5px 12px;font-size:13px;font-weight:bold;}
+        .member-tag.confirmed{background:#E8F5E9;color:#2E7D32;}
+        .member-tag.pending{background:#FFF8E1;color:#F57F17;}
         .group-score-item{text-align:center;flex:1;}
         .group-score-num{font-size:22px;font-weight:800;color:var(--accent);line-height:1.2;}
         .group-score-label{font-size:11px;color:#999;margin-top:2px;}
@@ -454,7 +461,32 @@ async function refreshData() {
                     }).join('');
                     return '<div class="perf-item"><div class="perf-title-row"><span style="font-weight:bold;font-size:16px;">' + inv.name + '</span><span style="font-size:13px;color:#666;">推薦:' + inv.count + ' | <b style="color:var(--accent)">總分:' + inv.totalPoints + '</b></span></div>' + recruitsHtml + '</div>';
                 }).join('');
-                return '<div class="group-frame"><div class="group-header">' + g.groupName + ' 小組</div><div class="group-score-bar"><div class="group-score-item"><div class="group-score-num">' + g.groupTotalPoints + '</div><div class="group-score-label">總分</div></div><div class="group-score-item"><div class="group-score-num" style="color:#333;">' + g.groupTotalReferrals + '</div><div class="group-score-label">推薦人數</div></div><div class="group-score-item"><div class="group-score-num" style="color:#2E7D32;">' + g.groupEffectiveCount + '</div><div class="group-score-label">有效推薦</div></div></div>' + influencersHtml + '</div>';
+
+                // 成員名單區塊
+                const members = g.members || [];
+                const confirmedCount = members.filter(function(m) { return m.status === '是'; }).length;
+                const pendingCount = members.filter(function(m) { return m.status === '待確認'; }).length;
+                const memberPanelId = 'member-panel-' + g.groupName.replace(/\s/g,'');
+                const memberToggleLabel = '成員 ' + members.length + ' 人（✅ ' + confirmedCount + ' 已確認　⏳ ' + pendingCount + ' 審核中）';
+                const memberTagsHtml = members.map(function(m) {
+                    const cls = m.status === '是' ? 'confirmed' : 'pending';
+                    const icon = m.status === '是' ? '✅' : '⏳';
+                    return '<span class="member-tag ' + cls + '">' + icon + ' ' + m.name + '</span>';
+                }).join('');
+
+                return '<div class="group-frame">' +
+                    '<div class="group-header">' + g.groupName + ' 小組</div>' +
+                    '<div class="group-score-bar">' +
+                        '<div class="group-score-item"><div class="group-score-num">' + g.groupTotalPoints + '</div><div class="group-score-label">總分</div></div>' +
+                        '<div class="group-score-item"><div class="group-score-num" style="color:#333;">' + g.groupTotalReferrals + '</div><div class="group-score-label">推薦人數</div></div>' +
+                        '<div class="group-score-item"><div class="group-score-num" style="color:#2E7D32;">' + g.groupEffectiveCount + '</div><div class="group-score-label">有效推薦</div></div>' +
+                    '</div>' +
+                    '<button class="member-toggle" onclick="toggleMemberPanel('' + memberPanelId + '',this)">' +
+                        '<span>' + memberToggleLabel + '</span><span>▼</span>' +
+                    '</button>' +
+                    '<div class="member-panel" id="' + memberPanelId + '">' + memberTagsHtml + '</div>' +
+                    influencersHtml +
+                '</div>';
             }).join('');
             document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無推薦紀錄</p>';
 
@@ -659,6 +691,13 @@ function renderAdminTab(tabName) {
 }
 
 function toggleDetail(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+    btn.querySelector('span:last-child').textContent = el.classList.contains('open') ? '▲' : '▼';
+}
+
+function toggleMemberPanel(id, btn) {
     const el = document.getElementById(id);
     if (!el) return;
     el.classList.toggle('open');
