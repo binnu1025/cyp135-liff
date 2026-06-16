@@ -134,9 +134,17 @@
             <button onclick="closeRegisterPage()" style="background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
             <h2 style="margin:0;font-size:18px;">競賽報名</h2>
         </div>
-        <div class="register-section">
+
+        <!-- 本人報名區 -->
+        <div class="register-section" id="self-reg-section">
             <div class="register-section-title">我要報名</div>
             <p style="font-size:13px;color:#888;margin-top:0;">以自己的 LINE 帳號報名，報名成功後自動綁定。</p>
+            <!-- 已報名狀態 -->
+            <div id="self-reg-already" style="display:none;background:#F8F9FA;border-radius:10px;padding:16px;">
+                <div style="font-size:14px;font-weight:bold;margin-bottom:8px;" id="self-reg-already-name"></div>
+                <div style="font-size:12px;color:#888;" id="self-reg-already-info"></div>
+            </div>
+            <!-- 報名表單 -->
             <div id="self-reg-form">
                 <label>安麗編號</label><input type="number" id="self-amId" placeholder="請輸入安麗編號">
                 <label>姓名</label><input type="text" id="self-name" placeholder="請輸入姓名">
@@ -145,16 +153,25 @@
             </div>
             <div class="reg-success" id="self-reg-success">✅ 報名申請已送出！等待會長確認後即可使用。</div>
         </div>
+
+        <!-- 代報名區 -->
         <div class="register-section proxy">
             <div class="register-section-title">代為他人報名</div>
             <p style="font-size:13px;color:#888;margin-top:0;">幫夥伴報名，不綁定 LINE 帳號，對方之後可自行認領身分。</p>
+            <!-- 已送出名單 -->
+            <div id="proxy-submitted-list" style="display:none;margin-bottom:14px;">
+                <div style="font-size:12px;font-weight:bold;color:#2E7D32;margin-bottom:8px;">✅ 本次已送出：</div>
+                <div id="proxy-submitted-names" style="font-size:13px;color:#555;line-height:1.8;"></div>
+            </div>
+            <!-- 代報名表單 -->
             <div id="proxy-reg-form">
-                <label>安麗編號</label><input type="number" id="proxy-amId" placeholder="請輸入對方安麗編號">
+                <label>安麗編號</label>
+                <input type="number" id="proxy-amId" placeholder="請輸入對方安麗編號" onblur="checkProxyAmId()">
+                <div class="field-warn" id="proxy-amId-warn"></div>
                 <label>姓名</label><input type="text" id="proxy-name" placeholder="請輸入對方姓名">
                 <label>所屬雁群</label><select id="proxy-group"><option value="">請選擇雁群</option></select>
-                <button class="btn" type="button" onclick="submitProxyRegister()" style="margin-top:20px;background:#007AFF;">送出代報名</button>
+                <button class="btn" type="button" onclick="submitProxyRegister()" style="margin-top:20px;background:#007AFF;" id="btn-proxy-reg">送出代報名</button>
             </div>
-            <div class="reg-success" id="proxy-reg-success" style="background:#E3F2FD;color:#0D47A1;">✅ 代報名已送出！等待會長確認。</div>
         </div>
     </div>
 </div>
@@ -522,7 +539,7 @@ function renderAdminTab(tabName) {
             Object.keys(regByGroup).forEach(function(gName) {
                 html += '<div class="group-frame"><div class="group-header">' + gName + ' 雁群（' + regByGroup[gName].length + ' 人待確認）</div>';
                 regByGroup[gName].forEach(function(r) {
-                    html += '<div class="reg-pending-item"><div class="reg-pending-name">' + r.name + '</div><div class="reg-pending-meta">安麗編號：' + r.amId + '　｜　' + (r.lineId ? '已綁定 LINE' : '未綁定（代報名）') + '</div><div class="reg-action-row"><button class="btn" style="flex:1;margin:0;background:#2E7D32;padding:10px;" onclick="approveRegister(\'' + r.amId + '\',\'' + r.name + '\')">✅ 確認報名</button><button class="btn" style="flex:1;margin:0;background:#D32F2F;padding:10px;" onclick="rejectRegister(\'' + r.amId + '\',\'' + r.name + '\')">❌ 退回</button></div></div>';
+                    html += '<div class="reg-pending-item"><div class="reg-pending-name">' + r.name + '</div><div class="reg-pending-meta">安麗編號：' + r.amId + '　｜　' + (r.lineId ? '已綁定 LINE' : '未綁定（代報名）') + '</div><div class="reg-action-row"><button class="btn" style="flex:1;margin:0;background:#2E7D32;padding:10px;" onclick="approveRegister(\'' + r.amId + '\',\'' + r.name + '\',this)">✅ 確認報名</button><button class="btn" style="flex:1;margin:0;background:#D32F2F;padding:10px;" onclick="rejectRegister(\'' + r.amId + '\',\'' + r.name + '\',this)">❌ 退回</button></div></div>';
                 });
                 html += '</div>';
             });
@@ -890,26 +907,66 @@ async function deleteGift(name) {
 }
 
 // ── 報名審核 ──
-async function approveRegister(amId, name) {
+async function approveRegister(amId, name, btnEl) {
     if (!confirm('確認「' + name + '」的報名？')) return;
+    if (btnEl) { btnEl.disabled = true; btnEl.innerText = '處理中...'; }
     try {
         const res = await apiCall('approveRegister', { amId: amId, name: name });
         showToast(res.message);
-        if (res.success) setTimeout(function() { loadAdmin(); }, 800);
-    } catch(e) { showToast('操作失敗'); }
+        if (res.success) {
+            // 直接移除這筆，不重整頁面
+            const item = btnEl ? btnEl.closest('.reg-pending-item') : null;
+            if (item) {
+                item.style.transition = 'opacity 0.3s';
+                item.style.opacity = '0';
+                setTimeout(function() {
+                    item.remove();
+                    // 如果該雁群區塊已無成員，移除整個區塊
+                    const frame = item.closest ? item.closest('.group-frame') : null;
+                    if (frame && frame.querySelectorAll('.reg-pending-item').length === 0) frame.remove();
+                }, 300);
+            }
+            // 更新 adminDataCache
+            if (adminDataCache && adminDataCache.pendingRegistrations) {
+                adminDataCache.pendingRegistrations = adminDataCache.pendingRegistrations.filter(function(r) { return r.amId !== amId; });
+            }
+        }
+    } catch(e) {
+        showToast('操作失敗');
+        if (btnEl) { btnEl.disabled = false; btnEl.innerText = '✅ 確認報名'; }
+    }
 }
-async function rejectRegister(amId, name) {
+async function rejectRegister(amId, name, btnEl) {
     if (!confirm('確定退回「' + name + '」的報名？')) return;
+    if (btnEl) { btnEl.disabled = true; btnEl.innerText = '處理中...'; }
     try {
         const res = await apiCall('rejectRegister', { amId: amId, name: name });
         showToast(res.message);
-        if (res.success) setTimeout(function() { loadAdmin(); }, 800);
-    } catch(e) { showToast('操作失敗'); }
+        if (res.success) {
+            const item = btnEl ? btnEl.closest('.reg-pending-item') : null;
+            if (item) {
+                item.style.transition = 'opacity 0.3s';
+                item.style.opacity = '0';
+                setTimeout(function() {
+                    item.remove();
+                    const frame = item.closest ? item.closest('.group-frame') : null;
+                    if (frame && frame.querySelectorAll('.reg-pending-item').length === 0) frame.remove();
+                }, 300);
+            }
+            if (adminDataCache && adminDataCache.pendingRegistrations) {
+                adminDataCache.pendingRegistrations = adminDataCache.pendingRegistrations.filter(function(r) { return r.amId !== amId; });
+            }
+        }
+    } catch(e) {
+        showToast('操作失敗');
+        if (btnEl) { btnEl.disabled = false; btnEl.innerText = '❌ 退回'; }
+    }
 }
 
 // ── 報名頁面 ──
-function openRegisterPage() {
+async function openRegisterPage() {
     document.getElementById('register-page').style.display = 'block';
+    // 填入雁群選項
     const groupListData = window._groupList || [];
     ['self-group', 'proxy-group'].forEach(function(id) {
         const sel = document.getElementById(id);
@@ -917,11 +974,26 @@ function openRegisterPage() {
             sel.innerHTML = '<option value="">請選擇雁群</option>' + groupListData.map(function(g) { return '<option value="' + g + '">' + g + '</option>'; }).join('');
         }
     });
+    // 檢查本人是否已報名
+    try {
+        const res = await apiCall('checkMyRegistration');
+        if (res.found) {
+            document.getElementById('self-reg-form').style.display = 'none';
+            document.getElementById('self-reg-success').style.display = 'none';
+            const alreadyDiv = document.getElementById('self-reg-already');
+            alreadyDiv.style.display = 'block';
+            const statusText = res.status === '是' ? '✅ 已確認參賽' : '⏳ 報名審核中，等待會長確認';
+            document.getElementById('self-reg-already-name').innerText = res.name + '（' + res.amId + '）';
+            document.getElementById('self-reg-already-info').innerText = '所屬雁群：' + res.group + '　狀態：' + statusText;
+        }
+    } catch(e) { /* 查不到就讓使用者正常填表 */ }
 }
+
 function closeRegisterPage() {
     document.getElementById('register-page').style.display = 'none';
     window.location.hash = '';
 }
+
 async function submitSelfRegister() {
     const amId = document.getElementById('self-amId').value.trim();
     const name = document.getElementById('self-name').value.trim();
@@ -930,19 +1002,58 @@ async function submitSelfRegister() {
     try {
         const res = await apiCall('submitRegister', { uid: state.uid, amId: amId, name: name, group: group });
         showToast(res.message);
-        if (res.success) { document.getElementById('self-reg-form').style.display = 'none'; document.getElementById('self-reg-success').style.display = 'block'; }
+        if (res.success) {
+            document.getElementById('self-reg-form').style.display = 'none';
+            document.getElementById('self-reg-success').style.display = 'block';
+        }
     } catch(e) { showToast('提交失敗'); }
 }
+
+// 代報名：檢查編號是否重複
+async function checkProxyAmId() {
+    const amId = document.getElementById('proxy-amId').value.trim();
+    const warn = document.getElementById('proxy-amId-warn');
+    if (!amId) { warn.classList.remove('show'); return; }
+    try {
+        const res = await apiCall('checkRegisterId&amId=' + amId);
+        if (res.exists) { warn.innerText = res.message; warn.classList.add('show'); }
+        else warn.classList.remove('show');
+    } catch(e) { warn.classList.remove('show'); }
+}
+
+// 代報名：送出後清空表單，累計顯示已送出名單
+let proxySubmittedList = [];
 async function submitProxyRegister() {
     const amId = document.getElementById('proxy-amId').value.trim();
     const name = document.getElementById('proxy-name').value.trim();
     const group = document.getElementById('proxy-group').value;
+    const warn = document.getElementById('proxy-amId-warn');
     if (!amId || !name || !group) { showToast('請填寫完整資料'); return; }
+    if (warn.classList.contains('show')) { showToast('此編號已在名冊中，請確認'); return; }
+    const btn = document.getElementById('btn-proxy-reg');
+    btn.disabled = true; btn.innerText = '送出中...';
     try {
         const res = await apiCall('submitRegister', { uid: '', amId: amId, name: name, group: group });
-        showToast(res.message);
-        if (res.success) { document.getElementById('proxy-reg-form').style.display = 'none'; document.getElementById('proxy-reg-success').style.display = 'block'; }
+        if (res.success) {
+            // 加入已送出清單
+            proxySubmittedList.push(name + '（' + amId + '）');
+            const listDiv = document.getElementById('proxy-submitted-list');
+            const namesDiv = document.getElementById('proxy-submitted-names');
+            listDiv.style.display = 'block';
+            namesDiv.innerHTML = proxySubmittedList.map(function(n, i) {
+                return (i + 1) + '. ' + n;
+            }).join('<br>');
+            // 清空表單
+            document.getElementById('proxy-amId').value = '';
+            document.getElementById('proxy-name').value = '';
+            document.getElementById('proxy-group').value = '';
+            warn.classList.remove('show');
+            showToast('✅ ' + name + ' 已送出！可繼續填寫下一位');
+        } else {
+            showToast(res.message);
+        }
     } catch(e) { showToast('提交失敗'); }
+    finally { btn.disabled = false; btn.innerText = '送出代報名'; }
 }
 
 // ── 初始化 ──
