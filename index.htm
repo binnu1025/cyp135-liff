@@ -1025,27 +1025,45 @@ async function rejectRegister(amId, name, btnEl) {
 // ── 報名頁面 ──
 async function openRegisterPage() {
     document.getElementById('register-page').style.display = 'block';
-    // 填入雁群選項
-    const groupListData = window._groupList || [];
-    ['self-group', 'proxy-group'].forEach(function(id) {
-        const sel = document.getElementById(id);
-        if (sel && groupListData.length > 0) {
-            sel.innerHTML = '<option value="">請選擇雁群</option>' + groupListData.map(function(g) { return '<option value="' + g + '">' + g + '</option>'; }).join('');
+
+    // 填入雁群選項：優先用快取，沒有就去 GAS 撈
+    async function fillGroupOptions() {
+        let groupListData = window._groupList || [];
+        if (groupListData.length === 0) {
+            try {
+                const res = await apiCall('getGroupList');
+                if (res.success && res.data && res.data.length > 0) {
+                    groupListData = res.data;
+                    window._groupList = res.data;
+                }
+            } catch(e) {}
         }
-    });
-    // 檢查本人是否已報名
-    try {
-        const res = await apiCall('checkMyRegistration');
-        if (res.found) {
-            document.getElementById('self-reg-form').style.display = 'none';
-            document.getElementById('self-reg-success').style.display = 'none';
-            const alreadyDiv = document.getElementById('self-reg-already');
-            alreadyDiv.style.display = 'block';
-            const statusText = res.status === '是' ? '✅ 已確認參賽' : '⏳ 報名審核中，等待會長確認';
-            document.getElementById('self-reg-already-name').innerText = res.name + '（' + res.amId + '）';
-            document.getElementById('self-reg-already-info').innerText = '所屬雁群：' + res.group + '　狀態：' + statusText;
-        }
-    } catch(e) { /* 查不到就讓使用者正常填表 */ }
+        ['self-group', 'proxy-group'].forEach(function(id) {
+            const sel = document.getElementById(id);
+            if (sel && groupListData.length > 0) {
+                sel.innerHTML = '<option value="">請選擇雁群</option>' + groupListData.map(function(g) {
+                    return '<option value="' + g + '">' + g + '</option>';
+                }).join('');
+            }
+        });
+    }
+
+    // 兩個非同步任務同時執行
+    await Promise.all([
+        fillGroupOptions(),
+        // 檢查本人是否已報名
+        apiCall('checkMyRegistration').then(function(res) {
+            if (res.found) {
+                document.getElementById('self-reg-form').style.display = 'none';
+                document.getElementById('self-reg-success').style.display = 'none';
+                const alreadyDiv = document.getElementById('self-reg-already');
+                alreadyDiv.style.display = 'block';
+                const statusText = res.status === '是' ? '✅ 已確認參賽' : '⏳ 報名審核中，等待會長確認';
+                document.getElementById('self-reg-already-name').innerText = res.name + '（' + res.amId + '）';
+                document.getElementById('self-reg-already-info').innerText = '所屬雁群：' + res.group + '　狀態：' + statusText;
+            }
+        }).catch(function() {})
+    ]);
 }
 
 function closeRegisterPage() {
