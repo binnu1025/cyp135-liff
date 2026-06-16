@@ -481,7 +481,7 @@ async function refreshData() {
                         '<div class="group-score-item"><div class="group-score-num" style="color:#333;">' + g.groupTotalReferrals + '</div><div class="group-score-label">推薦人數</div></div>' +
                         '<div class="group-score-item"><div class="group-score-num" style="color:#2E7D32;">' + g.groupEffectiveCount + '</div><div class="group-score-label">有效推薦</div></div>' +
                     '</div>' +
-                    '<button class="member-toggle" onclick="toggleMemberPanel('' + memberPanelId + '',this)">' +
+                    '<button class="member-toggle" onclick="toggleMemberPanel(' + "'" + memberPanelId + "'" + ',this)">' +
                         '<span>' + memberToggleLabel + '</span><span>▼</span>' +
                     '</button>' +
                     '<div class="member-panel" id="' + memberPanelId + '">' + memberTagsHtml + '</div>' +
