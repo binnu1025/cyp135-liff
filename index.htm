@@ -4,122 +4,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>CYP135 推薦小幫手</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        :root { --main-dark:#000; --sub-gray:#BBB; --bg-light:#F8F9FA; --border:#E0E0E0; --accent:#007AFF; }
-        body { background:var(--bg-light); color:var(--main-dark); font-family:-apple-system,"Noto Sans TC",sans-serif; margin:0; line-height:1.6; }
-        .tab-bar { display:flex; background:#fff; position:sticky; top:0; z-index:100; border-bottom:1px solid var(--border); }
-        .tab { flex:1; text-align:center; padding:18px 0; font-size:13px; color:var(--sub-gray); cursor:pointer; position:relative; }
-        .tab.active { color:var(--main-dark); font-weight:bold; }
-        .tab.active::after { content:""; position:absolute; bottom:0; left:25%; width:50%; height:2px; background:#000; }
-        .container { padding:20px; max-width:600px; margin:0 auto; min-height:100vh; }
-        .group-frame { background:#FFFFFF; border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:25px; box-shadow:0 4px 12px rgba(0,0,0,0.03); }
-        .group-header { font-size:15px; font-weight:800; color:#000; margin-bottom:15px; display:flex; align-items:center; border-left:4px solid #000; padding-left:10px; }
-        .card { background:#F9F9F9; padding:15px; border-radius:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(0,0,0,0.03); cursor:pointer; }
-        .sub-tab-bar { display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid #EEE; margin-bottom:20px; }
-        .sub-tab { text-align:center; padding:11px 6px; font-size:13px; color:#999; cursor:pointer; position:relative; font-weight:bold; white-space:nowrap; }
-        .sub-tab.active { color:#000; }
-        .sub-tab.active::after { content:""; position:absolute; bottom:-1px; left:10%; width:80%; height:3px; background:#000; }
-        .black-header { background:#000; color:#FFF; padding:12px 15px; border-radius:8px 8px 0 0; font-weight:bold; font-size:14px; margin-top:15px; }
-        .card-body { background:#FFF; border:1px solid #EEE; border-top:none; border-radius:0 0 8px 8px; padding:15px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.02); }
-        .perf-item { background:#FCFCFD; border:1px solid #F0F0F0; border-radius:12px; padding:12px; margin-bottom:15px; }
-        .perf-title-row { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding-bottom:8px; margin-bottom:10px; }
-        .recruit-detail { font-size:14px; padding:8px 0; border-bottom:1px dashed #EEE; }
-        .recruit-detail:last-child { border-bottom:none; }
-        .tag { font-size:10px; padding:2px 8px; border-radius:4px; font-weight:bold; }
-        .tag-plus1 { background:#EEE; color:#666; }
-        .tag-plus2, .tag-green { background:#E8F5E9; color:#2E7D32; }
-        .btn { width:100%; background:#000; color:#fff; border:none; padding:16px; border-radius:8px; font-weight:bold; cursor:pointer; margin-top:10px; }
-        #toast { display:none; position:fixed; top:25px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#fff; padding:10px 20px; border-radius:30px; z-index:9999; text-align:center; }
-        #loading { position:fixed; inset:0; background:#fff; z-index:9999; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#999; }
-        label { display:block; font-size:12px; font-weight:bold; margin-top:15px; }
-        input, select { width:100%; border:none; border-bottom:1px solid #EEE; padding:8px 0; font-size:16px; outline:none; background:transparent; box-sizing:border-box; }
-        #image-viewer { position:fixed; inset:0; background:rgba(0,0,0,0.95); display:none; align-items:center; justify-content:center; z-index:3000; flex-direction:column; }
-        #image-viewer img { max-width:95%; max-height:80vh; border-radius:8px; object-fit:contain; }
-        .profile-tags { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
-        .profile-tag-item { font-size:12px; font-weight:bold; color:var(--accent); }
-        .profile-tag-divider { font-size:12px; color:#CCC; }
-        .stats-grid { display:flex; gap:12px; margin-bottom:20px; }
-        .stat-card { flex:1; background:#fff; border:1px solid var(--border); border-radius:14px; padding:16px 10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .stat-number { font-size:28px; font-weight:800; color:#FF8F00; line-height:1.2; }
-        .stat-label { font-size:11px; color:#888; margin-top:4px; }
-        .roster-group { background:#fff; border:1px solid var(--border); border-radius:14px; margin-bottom:16px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.03); }
-        .roster-group-header { background:#000; color:#fff; padding:10px 16px; font-weight:bold; font-size:14px; }
-        .roster-member { padding:11px 16px; border-bottom:1px solid #F5F5F5; font-size:14px; display:flex; align-items:center; gap:8px; }
-        .roster-member:last-child { border-bottom:none; }
-        .roster-member-name { font-weight:bold; }
-        .roster-member-id { font-size:12px; color:#999; }
-        .yanqun-frame { background:#fff; border:1px solid var(--border); border-radius:16px; margin-bottom:20px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); }
-        .yanqun-top { padding:16px 18px 12px; border-bottom:1px solid #F0F0F0; }
-        .yanqun-name { font-size:16px; font-weight:800; margin-bottom:10px; border-left:4px solid #000; padding-left:10px; }
-        .yanqun-meta { display:flex; gap:16px; }
-        .yanqun-meta-item { text-align:center; }
-        .yanqun-meta-num { font-size:22px; font-weight:800; color:var(--accent); }
-        .yanqun-meta-label { font-size:11px; color:#999; }
-        .yanqun-toggle { width:100%; background:#F8F9FA; border:none; border-top:1px solid #F0F0F0; padding:12px 18px; text-align:left; font-size:13px; font-weight:bold; color:#555; cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-        .yanqun-toggle:hover { background:#F0F0F0; }
-        .yanqun-detail { display:none; padding:0 18px 14px; border-top:1px solid #F5F5F5; }
-        .yanqun-detail.open { display:block; }
-        .inv-group { margin-top:14px; }
-        .inv-group-title { font-size:14px; font-weight:700; margin-bottom:6px; color:#333; }
-        .inv-recruit-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0 7px 12px; border-left:2px solid #EEE; margin-bottom:4px; font-size:13px; }
-        .inv-recruit-row.effective { border-left-color:#2E7D32; }
-        .field-warn { font-size:12px; color:#D32F2F; margin-top:5px; padding:6px 10px; background:#FFEBEE; border-radius:6px; display:none; }
-        .field-warn.show { display:block; }
-        .img-preview-area { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-        .img-preview-item { position:relative; width:80px; height:80px; border-radius:8px; overflow:hidden; border:1px solid #DDD; cursor:pointer; }
-        .img-preview-item img { width:100%; height:100%; object-fit:cover; border:none; padding:0; }
-        .img-preview-remove { position:absolute; top:3px; right:3px; background:rgba(0,0,0,0.6); color:#fff; border:none; border-radius:50%; width:20px; height:20px; font-size:12px; line-height:20px; text-align:center; cursor:pointer; padding:0; }
-        .img-hint { font-size:12px; color:#999; margin-top:5px; }
-        .file-input-wrap { margin-top:10px; }
-        .file-input-btn { display:inline-block; padding:8px 18px; background:#F0F0F0; border-radius:8px; font-size:14px; font-weight:bold; cursor:pointer; color:#333; border:1px dashed #CCC; }
-        input[type="file"] { display:none; }
-        .award-inv-block { margin-bottom:16px; }
-        .award-inv-title { font-size:14px; font-weight:800; padding:8px 12px; background:#F0F0F0; border-radius:8px; margin-bottom:8px; }
-        .award-recruit-row { padding:10px 12px; border-radius:10px; margin-bottom:8px; border-left:3px solid #EEE; background:#FAFAFA; }
-        .award-recruit-row.effective { border-left-color:#2E7D32; }
-        .award-recruit-name { font-size:14px; font-weight:bold; margin-bottom:6px; }
-        .award-status-row { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; }
-        /* 頒獎三種狀態色碼 */
-        .award-status-claimed { font-size:12px; color:#2E7D32; font-weight:bold; }
-        .award-status-pending { font-size:12px; color:#FF8F00; font-weight:bold; }
-        .award-status-none    { font-size:12px; color:#999; font-weight:bold; }
-        .award-recruit-row.status-claimed { background:#F1F8F1; border-left-color:#2E7D32; }
-        .award-recruit-row.status-pending { background:#FFF8EE; border-left-color:#FF8F00; }
-        .award-recruit-row.status-none    { background:#FAFAFA; border-left-color:#CCC; }
-        .award-btn-sm { font-size:11px; background:#000; color:#fff; border:none; border-radius:6px; padding:4px 12px; cursor:pointer; font-weight:bold; }
-        .award-btn-green { font-size:11px; background:#2E7D32; color:#fff; border:none; border-radius:6px; padding:4px 12px; cursor:pointer; font-weight:bold; }
-
-        /* 競賽狀態 Banner */
-        .contest-banner { padding:12px 18px; border-radius:12px; margin-bottom:18px; font-size:14px; font-weight:bold; text-align:center; }
-        .contest-banner.active   { background:#E8F5E9; color:#2E7D32; }
-        .contest-banner.pending  { background:#FFF8E1; color:#F57F17; }
-        .contest-banner.closed   { background:#FFEBEE; color:#C62828; }
-
-        /* 雁群小組 - 整組分數 */
-        .group-score-bar { display:flex; gap:12px; margin-bottom:14px; background:#F8F9FA; border-radius:10px; padding:10px 14px; }
-        .group-score-item { text-align:center; flex:1; }
-        .group-score-num { font-size:22px; font-weight:800; color:var(--accent); line-height:1.2; }
-        .group-score-label { font-size:11px; color:#999; margin-top:2px; }
-
-        /* 已審核紀錄 */
-        .reviewed-item { background:#FAFAFA; border:1px solid #EEE; border-radius:10px; padding:12px; margin-bottom:10px; }
-        .reviewed-item.approved { border-left:3px solid #2E7D32; }
-        .reviewed-item.rejected { border-left:3px solid #D32F2F; }
-        .reviewed-status { font-size:12px; font-weight:bold; }
-        .reviewed-status.approved { color:#2E7D32; }
-        .reviewed-status.rejected { color:#D32F2F; }
-
-        /* 競賽設定 */
-        .contest-option { display:flex; align-items:center; gap:12px; padding:14px; border:2px solid #EEE; border-radius:12px; margin-bottom:10px; cursor:pointer; transition:border-color .2s; }
-        .contest-option.selected { border-color:#000; background:#F8F8F8; }
-        .contest-option-dot { width:18px; height:18px; border-radius:50%; border:2px solid #CCC; flex-shrink:0; }
-        .contest-option.selected .contest-option-dot { background:#000; border-color:#000; }
-        .contest-option-label { font-size:14px; font-weight:bold; }
-        .contest-option-desc  { font-size:12px; color:#999; }
+        :root{--main-dark:#000;--sub-gray:#BBB;--bg-light:#F8F9FA;--border:#E0E0E0;--accent:#007AFF;}
+        body{background:var(--bg-light);color:var(--main-dark);font-family:-apple-system,"Noto Sans TC",sans-serif;margin:0;line-height:1.6;}
+        .tab-bar{display:flex;background:#fff;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);}
+        .tab{flex:1;text-align:center;padding:18px 0;font-size:13px;color:var(--sub-gray);cursor:pointer;position:relative;}
+        .tab.active{color:var(--main-dark);font-weight:bold;}
+        .tab.active::after{content:"";position:absolute;bottom:0;left:25%;width:50%;height:2px;background:#000;}
+        .container{padding:20px;max-width:600px;margin:0 auto;min-height:100vh;}
+        .group-frame{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:25px;box-shadow:0 4px 12px rgba(0,0,0,0.03);}
+        .group-header{font-size:15px;font-weight:800;color:#000;margin-bottom:15px;display:flex;align-items:center;border-left:4px solid #000;padding-left:10px;}
+        .card{background:#F9F9F9;padding:15px;border-radius:12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(0,0,0,0.03);cursor:pointer;}
+        .sub-tab-bar{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #EEE;margin-bottom:20px;}
+        .sub-tab{text-align:center;padding:11px 6px;font-size:13px;color:#999;cursor:pointer;position:relative;font-weight:bold;white-space:nowrap;}
+        .sub-tab.active{color:#000;}
+        .sub-tab.active::after{content:"";position:absolute;bottom:-1px;left:10%;width:80%;height:3px;background:#000;}
+        .black-header{background:#000;color:#FFF;padding:12px 15px;border-radius:8px 8px 0 0;font-weight:bold;font-size:14px;margin-top:15px;}
+        .card-body{background:#FFF;border:1px solid #EEE;border-top:none;border-radius:0 0 8px 8px;padding:15px;margin-bottom:15px;}
+        .perf-item{background:#FCFCFD;border:1px solid #F0F0F0;border-radius:12px;padding:12px;margin-bottom:15px;}
+        .perf-title-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #EEE;padding-bottom:8px;margin-bottom:10px;}
+        .recruit-detail{font-size:14px;padding:8px 0;border-bottom:1px dashed #EEE;}
+        .recruit-detail:last-child{border-bottom:none;}
+        .tag{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:bold;}
+        .tag-plus1{background:#EEE;color:#666;}
+        .tag-green{background:#E8F5E9;color:#2E7D32;}
+        .btn{width:100%;background:#000;color:#fff;border:none;padding:16px;border-radius:8px;font-weight:bold;cursor:pointer;margin-top:10px;}
+        #toast{display:none;position:fixed;top:25px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 20px;border-radius:30px;z-index:9999;text-align:center;}
+        #loading{position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#999;}
+        label{display:block;font-size:12px;font-weight:bold;margin-top:15px;}
+        input,select{width:100%;border:none;border-bottom:1px solid #EEE;padding:8px 0;font-size:16px;outline:none;background:transparent;box-sizing:border-box;}
+        #image-viewer{position:fixed;inset:0;background:rgba(0,0,0,0.95);display:none;align-items:center;justify-content:center;z-index:3000;flex-direction:column;}
+        #image-viewer img{max-width:95%;max-height:80vh;border-radius:8px;object-fit:contain;}
+        .profile-tags{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+        .profile-tag-item{font-size:12px;font-weight:bold;color:var(--accent);}
+        .profile-tag-divider{font-size:12px;color:#CCC;}
+        .stats-grid{display:flex;gap:12px;margin-bottom:20px;}
+        .stat-card{flex:1;background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);}
+        .stat-number{font-size:28px;font-weight:800;color:#FF8F00;line-height:1.2;}
+        .stat-label{font-size:11px;color:#888;margin-top:4px;}
+        .roster-group{background:#fff;border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;}
+        .roster-group-header{background:#000;color:#fff;padding:10px 16px;font-weight:bold;font-size:14px;}
+        .roster-member{padding:11px 16px;border-bottom:1px solid #F5F5F5;font-size:14px;display:flex;align-items:center;gap:8px;}
+        .roster-member:last-child{border-bottom:none;}
+        .yanqun-frame{background:#fff;border:1px solid var(--border);border-radius:16px;margin-bottom:20px;overflow:hidden;}
+        .yanqun-top{padding:16px 18px 12px;border-bottom:1px solid #F0F0F0;}
+        .yanqun-name{font-size:16px;font-weight:800;margin-bottom:10px;border-left:4px solid #000;padding-left:10px;}
+        .yanqun-meta{display:flex;gap:16px;}
+        .yanqun-meta-item{text-align:center;}
+        .yanqun-meta-num{font-size:22px;font-weight:800;color:var(--accent);}
+        .yanqun-meta-label{font-size:11px;color:#999;}
+        .yanqun-toggle{width:100%;background:#F8F9FA;border:none;border-top:1px solid #F0F0F0;padding:12px 18px;text-align:left;font-size:13px;font-weight:bold;color:#555;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+        .yanqun-detail{display:none;padding:0 18px 14px;}
+        .yanqun-detail.open{display:block;}
+        .inv-group{margin-top:14px;}
+        .inv-group-title{font-size:14px;font-weight:700;margin-bottom:6px;color:#333;}
+        .inv-recruit-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0 7px 12px;border-left:2px solid #EEE;margin-bottom:4px;font-size:13px;}
+        .inv-recruit-row.effective{border-left-color:#2E7D32;}
+        .field-warn{font-size:12px;color:#D32F2F;margin-top:5px;padding:6px 10px;background:#FFEBEE;border-radius:6px;display:none;}
+        .field-warn.show{display:block;}
+        .img-preview-area{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+        .img-preview-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid #DDD;cursor:pointer;}
+        .img-preview-item img{width:100%;height:100%;object-fit:cover;}
+        .img-preview-remove{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;cursor:pointer;padding:0;}
+        .img-hint{font-size:12px;color:#999;margin-top:5px;}
+        .file-input-wrap{margin-top:10px;}
+        .file-input-btn{display:inline-block;padding:8px 18px;background:#F0F0F0;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;color:#333;border:1px dashed #CCC;}
+        input[type="file"]{display:none;}
+        .award-inv-block{margin-bottom:16px;}
+        .award-inv-title{font-size:14px;font-weight:800;padding:8px 12px;background:#F0F0F0;border-radius:8px;margin-bottom:8px;}
+        .award-recruit-row{padding:10px 12px;border-radius:10px;margin-bottom:8px;border-left:3px solid #CCC;background:#FAFAFA;}
+        .award-recruit-row.effective{border-left-color:#2E7D32;}
+        .award-recruit-row.status-claimed{background:#F1F8F1;border-left-color:#2E7D32;}
+        .award-recruit-row.status-pending{background:#FFF8EE;border-left-color:#FF8F00;}
+        .award-recruit-row.status-none{background:#FAFAFA;border-left-color:#CCC;}
+        .award-recruit-name{font-size:14px;font-weight:bold;margin-bottom:6px;}
+        .award-status-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+        .award-status-claimed{font-size:12px;color:#2E7D32;font-weight:bold;}
+        .award-status-pending{font-size:12px;color:#FF8F00;font-weight:bold;}
+        .award-status-none{font-size:12px;color:#999;font-weight:bold;}
+        .award-btn-sm{font-size:11px;background:#000;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:bold;}
+        .award-btn-green{font-size:11px;background:#2E7D32;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-weight:bold;}
+        .contest-banner{padding:12px 18px;border-radius:12px;margin-bottom:18px;font-size:14px;font-weight:bold;text-align:center;}
+        .contest-banner.active{background:#E8F5E9;color:#2E7D32;}
+        .contest-banner.pending{background:#FFF8E1;color:#F57F17;}
+        .contest-banner.closed{background:#FFEBEE;color:#C62828;}
+        .group-score-bar{display:flex;gap:12px;margin-bottom:14px;background:#F8F9FA;border-radius:10px;padding:10px 14px;}
+        .group-score-item{text-align:center;flex:1;}
+        .group-score-num{font-size:22px;font-weight:800;color:var(--accent);line-height:1.2;}
+        .group-score-label{font-size:11px;color:#999;margin-top:2px;}
+        .reviewed-item{background:#FAFAFA;border:1px solid #EEE;border-radius:10px;padding:12px;margin-bottom:10px;}
+        .reviewed-item.approved{border-left:3px solid #2E7D32;}
+        .reviewed-item.rejected{border-left:3px solid #D32F2F;}
+        .reviewed-status{font-size:12px;font-weight:bold;}
+        .reviewed-status.approved{color:#2E7D32;}
+        .reviewed-status.rejected{color:#D32F2F;}
+        .contest-option{display:flex;align-items:center;gap:12px;padding:14px;border:2px solid #EEE;border-radius:12px;margin-bottom:10px;cursor:pointer;}
+        .contest-option.selected{border-color:#000;background:#F8F8F8;}
+        .contest-option-dot{width:18px;height:18px;border-radius:50%;border:2px solid #CCC;flex-shrink:0;}
+        .contest-option.selected .contest-option-dot{background:#000;border-color:#000;}
+        .contest-option-label{font-size:14px;font-weight:bold;}
+        .contest-option-desc{font-size:12px;color:#999;}
+        .reg-pending-item{background:#FAFAFA;border:1px solid #EEE;border-left:3px solid #FF8F00;border-radius:10px;padding:12px;margin-bottom:10px;}
+        .reg-pending-name{font-size:14px;font-weight:bold;margin-bottom:4px;}
+        .reg-pending-meta{font-size:12px;color:#999;margin-bottom:10px;}
+        .reg-action-row{display:flex;gap:8px;}
+        #register-page{display:none;position:fixed;inset:0;background:var(--bg-light);z-index:500;overflow-y:auto;}
+        .register-section{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:20px;}
+        .register-section-title{font-size:15px;font-weight:800;border-left:4px solid #000;padding-left:10px;margin-bottom:16px;}
+        .register-section.proxy .register-section-title{border-left-color:#007AFF;color:#007AFF;}
+        .reg-success{background:#E8F5E9;color:#2E7D32;border-radius:10px;padding:14px;text-align:center;font-weight:bold;font-size:14px;margin-top:10px;display:none;}
     </style>
 </head>
 <body>
@@ -132,6 +127,39 @@
     <div style="color:#fff;margin-top:20px;border:1px solid #fff;padding:10px 30px;border-radius:30px;cursor:pointer;">關閉視窗</div>
 </div>
 
+<!-- 報名頁面 -->
+<div id="register-page">
+    <div style="max-width:600px;margin:0 auto;padding:20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
+            <button onclick="closeRegisterPage()" style="background:none;border:none;font-size:22px;cursor:pointer;">✕</button>
+            <h2 style="margin:0;font-size:18px;">競賽報名</h2>
+        </div>
+        <div class="register-section">
+            <div class="register-section-title">我要報名</div>
+            <p style="font-size:13px;color:#888;margin-top:0;">以自己的 LINE 帳號報名，報名成功後自動綁定。</p>
+            <div id="self-reg-form">
+                <label>安麗編號</label><input type="number" id="self-amId" placeholder="請輸入安麗編號">
+                <label>姓名</label><input type="text" id="self-name" placeholder="請輸入姓名">
+                <label>所屬雁群</label><select id="self-group"><option value="">請選擇雁群</option></select>
+                <button class="btn" type="button" onclick="submitSelfRegister()" style="margin-top:20px;">送出報名</button>
+            </div>
+            <div class="reg-success" id="self-reg-success">✅ 報名申請已送出！等待會長確認後即可使用。</div>
+        </div>
+        <div class="register-section proxy">
+            <div class="register-section-title">代為他人報名</div>
+            <p style="font-size:13px;color:#888;margin-top:0;">幫夥伴報名，不綁定 LINE 帳號，對方之後可自行認領身分。</p>
+            <div id="proxy-reg-form">
+                <label>安麗編號</label><input type="number" id="proxy-amId" placeholder="請輸入對方安麗編號">
+                <label>姓名</label><input type="text" id="proxy-name" placeholder="請輸入對方姓名">
+                <label>所屬雁群</label><select id="proxy-group"><option value="">請選擇雁群</option></select>
+                <button class="btn" type="button" onclick="submitProxyRegister()" style="margin-top:20px;background:#007AFF;">送出代報名</button>
+            </div>
+            <div class="reg-success" id="proxy-reg-success" style="background:#E3F2FD;color:#0D47A1;">✅ 代報名已送出！等待會長確認。</div>
+        </div>
+    </div>
+</div>
+
+<!-- 頒獎 Modal -->
 <div id="award-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:flex-end;justify-content:center;">
     <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:600px;box-sizing:border-box;">
         <div style="font-size:15px;font-weight:800;margin-bottom:4px;" id="modal-tar-name"></div>
@@ -142,26 +170,22 @@
             <option value="待領取">待領取（未到場）</option>
         </select>
         <div id="modal-gift-section">
-            <label>禮物</label>
-            <select id="modal-gift"></select>
-            <label>領取日期</label>
-            <input type="date" id="modal-claimDate">
+            <label>禮物</label><select id="modal-gift"></select>
+            <label>領取日期</label><input type="date" id="modal-claimDate">
         </div>
-        <label>備註（選填）</label>
-        <input type="text" id="modal-note" placeholder="例如：缺席補領">
+        <label>備註（選填）</label><input type="text" id="modal-note" placeholder="例如：缺席補領">
         <button class="btn" onclick="submitAwardModal()" style="margin-top:20px;">確認登記</button>
         <button class="btn" onclick="closeAwardModal()" style="background:#EEE;color:#000;margin-top:8px;">取消</button>
     </div>
 </div>
 
+<!-- 確認領取 Modal -->
 <div id="confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:flex-end;justify-content:center;">
     <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:600px;box-sizing:border-box;">
         <div style="font-size:15px;font-weight:800;margin-bottom:4px;" id="confirm-tar-name"></div>
         <div style="font-size:12px;color:#999;margin-bottom:16px;">確認已到場領取</div>
-        <label>禮物</label>
-        <select id="confirm-gift"></select>
-        <label>領取日期</label>
-        <input type="date" id="confirm-claimDate">
+        <label>禮物</label><select id="confirm-gift"></select>
+        <label>領取日期</label><input type="date" id="confirm-claimDate">
         <button class="btn" onclick="submitConfirmModal()" style="margin-top:20px;">確認已領取</button>
         <button class="btn" onclick="closeConfirmModal()" style="background:#EEE;color:#000;margin-top:8px;">取消</button>
     </div>
@@ -175,28 +199,23 @@
 </div>
 
 <div class="container">
+    <!-- 身分認領/註冊 -->
     <div id="reg-page" class="page" style="display:none">
-        <h2 style="margin-top:0;">身分確認 / 註冊報名</h2>
-        <p style="color:#666;font-size:14px;margin-bottom:20px;">偵測到您尚未綁定。若已報名，請輸入編號認領身分；若未報名，請填寫資料。</p>
-        <form id="regForm">
-            <label>安麗編號</label><input type="number" id="regAmId" placeholder="請輸入編號" required>
-            <label>姓名</label><input type="text" id="regName" placeholder="初次註冊請填寫姓名">
-            <label>所屬雁群</label><select id="regGroup"></select>
-            <div style="display:flex;gap:10px;margin-top:30px;">
-                <button class="btn" type="button" onclick="handleIdentity('link')" style="background:#666;">身分認領</button>
-                <button class="btn" type="button" onclick="handleIdentity('reg')">直接註冊</button>
-            </div>
-        </form>
+        <h2 style="margin-top:0;">身分確認 / 認領</h2>
+        <p style="color:#666;font-size:14px;margin-bottom:20px;">偵測到您尚未綁定。若已報名請輸入編號認領；若未報名請透過報名連結報名。</p>
+        <label>安麗編號</label><input type="number" id="regAmId" placeholder="請輸入編號">
+        <div style="display:flex;gap:10px;margin-top:30px;">
+            <button class="btn" type="button" onclick="handleIdentity('link')">身分認領</button>
+        </div>
     </div>
 
-    <!-- 成功推薦頁 -->
+    <!-- 成功推薦 -->
     <div id="ref" class="page">
-        <div class="profile-tags" id="profile-tags">
+        <div class="profile-tags">
             <span class="profile-tag-item" id="profile-classroom"></span>
             <span class="profile-tag-divider" id="profile-divider" style="display:none">｜</span>
             <span class="profile-tag-item" id="profile-group"></span>
         </div>
-        <!-- 競賽狀態 Banner -->
         <div id="contest-banner-ref" class="contest-banner" style="display:none;"></div>
         <h2 style="margin-top:0;">成功推薦登記</h2>
         <form id="refForm">
@@ -208,19 +227,15 @@
             <label>日期</label><input type="date" id="tarDate" min="2026-03-01" required>
             <label>金額</label><input type="number" id="tarAmt" placeholder="如未消費請填 0" required>
             <label>憑證（可選多張）</label>
-            <div class="file-input-wrap">
-                <label class="file-input-btn" for="tarImg">📷 選擇圖片</label>
-                <input type="file" id="tarImg" accept="image/*" multiple>
-            </div>
+            <div class="file-input-wrap"><label class="file-input-btn" for="tarImg">📷 選擇圖片</label><input type="file" id="tarImg" accept="image/*" multiple></div>
             <div class="img-hint">可選多張，點縮圖可放大，點 ✕ 可移除</div>
             <div class="img-preview-area" id="tarImg-preview"></div>
             <button class="btn" type="submit" id="btn-ref">提交數據</button>
         </form>
     </div>
 
-    <!-- 增加消費頁 -->
+    <!-- 增加消費 -->
     <div id="cons" class="page" style="display:none">
-        <!-- 競賽狀態 Banner -->
         <div id="contest-banner-cons" class="contest-banner" style="display:none;"></div>
         <h2 style="margin-top:0;">增加消費金額</h2>
         <div id="member-list"></div>
@@ -231,10 +246,7 @@
                 <input type="hidden" id="cInvId"><input type="hidden" id="cInvName">
                 <label>補填消費金額</label><input type="number" id="cAmt" required>
                 <label>憑證（可選多張）</label>
-                <div class="file-input-wrap">
-                    <label class="file-input-btn" for="cImg">📷 選擇圖片</label>
-                    <input type="file" id="cImg" accept="image/*" multiple>
-                </div>
+                <div class="file-input-wrap"><label class="file-input-btn" for="cImg">📷 選擇圖片</label><input type="file" id="cImg" accept="image/*" multiple></div>
                 <div class="img-hint">可選多張，點縮圖可放大，點 ✕ 可移除</div>
                 <div class="img-preview-area" id="cImg-preview"></div>
                 <button class="btn" type="submit" id="btn-cons">確認提交</button>
@@ -242,7 +254,7 @@
         </div>
     </div>
 
-    <!-- 雁群小組頁 -->
+    <!-- 雁群小組 -->
     <div id="group" class="page" style="display:none">
         <h2 style="margin-top:0;">雁群小組戰報</h2>
         <div id="group-perf-list"></div>
@@ -256,776 +268,717 @@
 </div>
 
 <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
-    let state = { uid: "", reviewerName: "" };
-    let adminDataCache = null;
-    let giftDataCache = null;
-    let modalPayload = {};
-    let confirmPayload = {};
-    let selectedFiles = { ref: [], cons: [] };
-    let contestStatusCache = null;
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
+let state = { uid: '', reviewerName: '' };
+let adminDataCache = null;
+let giftDataCache = null;
+let modalPayload = {};
+let confirmPayload = {};
+let selectedFiles = { ref: [], cons: [] };
+let contestStatusCache = null;
 
-    function showToast(msg) {
-        document.getElementById('toast-msg').innerText = msg;
-        const t = document.getElementById('toast');
-        t.style.display = 'block';
-        setTimeout(() => { t.style.display = 'none'; }, 3000);
-    }
+// ── 工具函式 ──
+function showToast(msg) {
+    document.getElementById('toast-msg').innerText = msg;
+    const t = document.getElementById('toast');
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
 
-    async function apiCall(action, payload = null) {
-        const url = payload ? GAS_URL : `${GAS_URL}?action=${action}&uid=${state.uid}`;
-        const opt = payload ? { method:'POST', body:JSON.stringify({action,payload}), redirect:'follow' } : { method:'GET' };
-        const response = await fetch(url, opt);
-        return response.json();
-    }
+async function apiCall(action, payload) {
+    const url = payload ? GAS_URL : GAS_URL + '?action=' + action + '&uid=' + state.uid;
+    const opt = payload ? { method: 'POST', body: JSON.stringify({ action, payload }), redirect: 'follow' } : { method: 'GET' };
+    const res = await fetch(url, opt);
+    return res.json();
+}
 
-    function setupImageInput(inputId, previewId, fileKey) {
-        const input = document.getElementById(inputId);
-        const previewArea = document.getElementById(previewId);
-        input.addEventListener('change', () => {
-            const newFiles = Array.from(input.files);
-            const remaining = 5 - selectedFiles[fileKey].length;
-            if (remaining <= 0) { showToast('最多只能上傳 5 張圖片'); input.value = ''; return; }
-            const toAdd = newFiles.slice(0, remaining);
-            if (newFiles.length > remaining) showToast(`已達上限，只加入前 ${remaining} 張`);
-            toAdd.forEach(file => { selectedFiles[fileKey].push(file); addPreviewItem(file, previewArea, fileKey); });
-            input.value = '';
-        });
-    }
+function setupImageInput(inputId, previewId, fileKey) {
+    const input = document.getElementById(inputId);
+    const previewArea = document.getElementById(previewId);
+    input.addEventListener('change', () => {
+        const newFiles = Array.from(input.files);
+        const remaining = 5 - selectedFiles[fileKey].length;
+        if (remaining <= 0) { showToast('最多只能上傳 5 張圖片'); input.value = ''; return; }
+        const toAdd = newFiles.slice(0, remaining);
+        if (newFiles.length > remaining) showToast('已達上限，只加入前 ' + remaining + ' 張');
+        toAdd.forEach(file => { selectedFiles[fileKey].push(file); addPreviewItem(file, previewArea, fileKey); });
+        input.value = '';
+    });
+}
 
-    function addPreviewItem(file, previewArea, fileKey) {
+function addPreviewItem(file, previewArea, fileKey) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        const index = selectedFiles[fileKey].length - 1;
+        const item = document.createElement('div');
+        item.className = 'img-preview-item';
+        item.dataset.index = index;
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.onclick = function() { viewImage(dataUrl); };
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'img-preview-remove';
+        removeBtn.innerText = '✕';
+        removeBtn.type = 'button';
+        removeBtn.onclick = function(ev) {
+            ev.stopPropagation();
+            const idx = parseInt(item.dataset.index);
+            selectedFiles[fileKey].splice(idx, 1);
+            previewArea.querySelectorAll('.img-preview-item').forEach(function(el, i) { if (i > idx) el.dataset.index = i - 1; });
+            item.remove();
+        };
+        item.appendChild(img);
+        item.appendChild(removeBtn);
+        previewArea.appendChild(item);
+    };
+    reader.readAsDataURL(file);
+}
+
+async function compressImage(file) {
+    return new Promise(function(resolve) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            const index = selectedFiles[fileKey].length - 1;
-            const item = document.createElement('div');
-            item.className = 'img-preview-item';
-            item.dataset.index = index;
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.onclick = () => viewImage(dataUrl);
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'img-preview-remove';
-            removeBtn.innerText = '✕';
-            removeBtn.type = 'button';
-            removeBtn.onclick = (ev) => {
-                ev.stopPropagation();
-                const idx = parseInt(item.dataset.index);
-                selectedFiles[fileKey].splice(idx, 1);
-                previewArea.querySelectorAll('.img-preview-item').forEach((el, i) => { if (i > idx) el.dataset.index = i - 1; });
-                item.remove();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX = 1200;
+                let w = img.width, h = img.height;
+                if (w > h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+                else if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', 0.75));
             };
-            item.appendChild(img);
-            item.appendChild(removeBtn);
-            previewArea.appendChild(item);
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
-    }
+    });
+}
 
-    // 顯示競賽狀態 Banner
-    function applyContestBanner(contestStatus) {
-        contestStatusCache = contestStatus;
-        const bannerIds = ['contest-banner-ref', 'contest-banner-cons'];
-        bannerIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            if (!contestStatus || contestStatus.status === 'active') {
-                el.style.display = 'none';
-                return;
-            }
-            el.style.display = 'block';
-            el.className = 'contest-banner ' + contestStatus.status;
-            if (contestStatus.status === 'pending') {
-                el.innerHTML = '⏳ 目前競賽尚未開始，暫時無法提交';
-            } else {
-                el.innerHTML = '🔒 競賽已截止，無法繼續提交';
-            }
-        });
+function viewImage(url) {
+    document.getElementById('viewer-img').src = url;
+    document.getElementById('image-viewer').style.display = 'flex';
+}
 
-        // 如非 active，停用提交按鈕
-        const isActive = !contestStatus || contestStatus.status === 'active';
-        ['btn-ref', 'btn-cons'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) {
-                btn.disabled = !isActive;
-                btn.style.opacity = isActive ? '1' : '0.4';
-            }
-        });
-    }
-
-    async function refreshData() {
-        try {
-            const res = await apiCall('getInitData');
-            if (res.data && res.data.error === "未註冊") {
-                document.getElementById('reg-page').style.display = 'block';
-                document.getElementById('ref').style.display = 'none';
-                document.getElementById('main-tabs').style.display = 'none';
-                document.getElementById('regGroup').innerHTML = '<option value="">請選擇雁群</option>' + res.data.groupList.map(g => `<option value="${g}">${g}</option>`).join('');
-                return;
-            }
-            if (res.data) {
-                const d = res.data;
-                document.getElementById('reg-page').style.display = 'none';
-                document.getElementById('main-tabs').style.display = 'flex';
-
-                // 競賽狀態 Banner
-                applyContestBanner(d.contestStatus);
-
-                const classroom = d.myProfile.classroom || "";
-                const group = d.myProfile.group || "";
-                const classroomEl = document.getElementById('profile-classroom');
-                const groupEl = document.getElementById('profile-group');
-                const dividerEl = document.getElementById('profile-divider');
-                if (classroom) { classroomEl.innerText = `所屬教室：${classroom}`; classroomEl.style.display = 'inline'; } else { classroomEl.style.display = 'none'; }
-                if (group) { groupEl.innerText = `所屬雁群：${group === '' ? '多重授權' : group}`; groupEl.style.display = 'inline'; } else { groupEl.style.display = 'none'; }
-                dividerEl.style.display = (classroom && group) ? 'inline' : 'none';
-
-                document.getElementById('inv-select').innerHTML = d.participants.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-
-                // ── 增加消費：顯示推薦人 ──
-                const groupedNewbies = d.newbies.reduce((acc, obj) => { if (!acc[obj.group]) acc[obj.group] = []; acc[obj.group].push(obj); return acc; }, {});
-                let consHtml = "";
-                for (const gName in groupedNewbies) {
-                    consHtml += `<div class="group-frame"><div class="group-header">${gName} 雁群</div>`;
-                    consHtml += groupedNewbies[gName].map(m => {
-                        const isReached = m.isReached;
-                        return `<div class="card" onclick="${isReached ? '' : `selectForCons('${m.tarId}','${m.name}','${m.invId}','${m.invName}')`}" style="${isReached ? 'opacity:0.5;background:#F0F0F0;' : ''}">
-                            <div>
-                                <b>${m.name || '未知'}</b> <small>(${m.tarId})</small>
-                                <br><small style="color:#888;">由 <b>${m.invName}</b> 推薦</small>
-                                <br><small>累計 $${m.spent}</small>
-                            </div>
-                            <div style="color:var(--accent);font-weight:bold;">${isReached ? '✅ 已達標' : '補填 ➔'}</div>
-                        </div>`;
-                    }).join('');
-                    consHtml += `</div>`;
-                }
-                document.getElementById('member-list').innerHTML = consHtml || '<p style="text-align:center;color:#999;padding:20px;">目前無名單</p>';
-
-                // ── 雁群小組：加入整組總分 ──
-                let groupHtml = d.groupPerf.map(g => {
-                    let influencersHtml = g.influencers.map(inv => {
-                        let recruitsHtml = Object.values(inv.recruits).map(r => `
-                            <div class="recruit-detail">
-                                <div style="display:flex;justify-content:space-between;">
-                                    <span>推薦 <b>${r.name}</b></span>
-                                    <span class="tag ${r.points === 2 ? 'tag-green' : 'tag-plus1'}">${r.points === 2 ? '有效推薦 +2' : '+1'}</span>
-                                </div>
-                                <div style="font-size:11px;color:#999;margin-top:4px;">📅 登記: ${r.recDate} ${r.effDate ? `| 🏆 達標: ${r.effDate}` : `(累計 $${r.spent})`}</div>
-                            </div>`).join('');
-                        return `<div class="perf-item"><div class="perf-title-row">
-                            <span style="font-weight:bold;font-size:16px;">${inv.name}</span>
-                            <span style="font-size:13px;color:#666;">推薦:${inv.count} | <b style="color:var(--accent)">總分:${inv.totalPoints}</b></span>
-                        </div>${recruitsHtml}</div>`;
-                    }).join('');
-
-                    return `<div class="group-frame">
-                        <div class="group-header">${g.groupName} 小組</div>
-                        <div class="group-score-bar">
-                            <div class="group-score-item">
-                                <div class="group-score-num">${g.groupTotalPoints}</div>
-                                <div class="group-score-label">總分</div>
-                            </div>
-                            <div class="group-score-item">
-                                <div class="group-score-num" style="color:#333;">${g.groupTotalReferrals}</div>
-                                <div class="group-score-label">推薦人數</div>
-                            </div>
-                            <div class="group-score-item">
-                                <div class="group-score-num" style="color:#2E7D32;">${g.groupEffectiveCount}</div>
-                                <div class="group-score-label">有效推薦</div>
-                            </div>
-                        </div>
-                        ${influencersHtml}
-                    </div>`;
-                }).join('');
-                document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無推薦紀錄</p>';
-
-                if (d.isPresident) {
-                    document.getElementById('t-adm').style.display = 'block';
-                    state.reviewerName = d.myProfile.name || "會長";
-                }
-            }
-        } catch(e) { console.error("Refresh Error:", e); showToast("數據載入異常，請重整"); }
-        finally { document.getElementById('loading').style.display = 'none'; }
-    }
-
-    async function handleIdentity(action) {
-        const amId = document.getElementById('regAmId').value;
-        const name = document.getElementById('regName').value;
-        const group = document.getElementById('regGroup').value;
-        if (!amId) { alert("請輸入安麗編號"); return; }
-        document.getElementById('loading').style.display = 'flex';
-        try {
-            const apiName = (action === 'link') ? 'linkIdentity' : 'registerUser';
-            const res = await apiCall(apiName, { uid: state.uid, amId, name, group });
-            alert(res.message);
-            if (res.success) location.reload();
-            else document.getElementById('loading').style.display = 'none';
-        } catch(e) { alert("連線失敗"); document.getElementById('loading').style.display = 'none'; }
-    }
-
-    function switchTab(id) {
-        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-        const targetPage = document.getElementById(id);
-        if (targetPage) targetPage.style.display = 'block';
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        const activeTab = document.getElementById('t-' + id);
-        if (activeTab) activeTab.classList.add('active');
-        if (id === 'adm') loadAdmin();
-    }
-
-    function selectForCons(tid, tname, iid, iname) {
-        document.getElementById('cons-form-area').style.display = 'block';
-        document.getElementById('selected-name').innerText = `為「${tname}」補填消費紀錄`;
-        document.getElementById('cTarId').value = tid;
-        document.getElementById('cTarName').value = tname;
-        document.getElementById('cInvId').value = iid;
-        document.getElementById('cInvName').value = iname;
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    async function loadAdmin() {
-        const cont = document.getElementById('admin-content');
-        cont.innerHTML = '<p style="text-align:center;padding:20px;color:#999;">載入會長資料庫中...</p>';
-        try {
-            const res = await apiCall('getAdminDashboard');
-            adminDataCache = res.data ? res.data : res;
-            renderAdminTab('pending');
-        } catch(e) { cont.innerHTML = '<p style="text-align:center;padding:30px;color:red;">連線失敗</p>'; }
-    }
-
-    function renderAdminTab(tabName) {
-        if (!adminDataCache && tabName !== 'award' && tabName !== 'contest') return;
-        const cont = document.getElementById('admin-content');
-        let html = `
-            <div class="sub-tab-bar" style="grid-template-columns:repeat(3,1fr);">
-                <div class="sub-tab ${tabName==='pending'?'active':''}"   onclick="renderAdminTab('pending')">待審核</div>
-                <div class="sub-tab ${tabName==='reviewed'?'active':''}"  onclick="renderAdminTab('reviewed')">審核紀錄</div>
-                <div class="sub-tab ${tabName==='stats'?'active':''}"     onclick="renderAdminTab('stats')">績效統計</div>
-                <div class="sub-tab ${tabName==='yanqun'?'active':''}"    onclick="renderAdminTab('yanqun')">雁群統計</div>
-                <div class="sub-tab ${tabName==='roster'?'active':''}"    onclick="renderAdminTab('roster')">參賽名單</div>
-                <div class="sub-tab ${tabName==='award'?'active':''}"     onclick="renderAdminTab('award')">頒獎管理</div>
-                <div class="sub-tab ${tabName==='contest'?'active':''}"   onclick="renderAdminTab('contest')">競賽設定</div>
-                <div class="sub-tab" style="cursor:default;"></div>
-                <div class="sub-tab" style="cursor:default;"></div>
-            </div>`;
-
-        if (tabName === 'pending') {
-            const pendingGroups = adminDataCache.pending || [];
-            if (pendingGroups.length === 0) {
-                html += '<p style="text-align:center;padding:30px;color:#999;">目前無待審核案件 ✨</p>';
-            } else {
-                pendingGroups.forEach(g => {
-                    html += `<div class="black-header">[ ${g.groupName} ] 待審核</div><div class="card-body">`;
-                    g.items.forEach(r => {
-                        html += `<div style="margin-bottom:20px;border-bottom:1px dashed #EEE;padding-bottom:15px;">
-                            <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">${r.invName} ➔ ${r.tarName} <span style="font-weight:normal;color:#666;">($${r.amt})</span></div>
-                            <div style="font-size:12px;color:#999;margin-bottom:10px;">類型: ${r.type || '未標記'}</div>
-                            ${r.img ? r.img.split(',').map((url, i) => `<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-bottom:8px;padding:10px;height:auto;" onclick="viewImage('${url.trim()}')">📸 查看憑證 ${r.img.split(',').length > 1 ? (i+1) : ''}</button>`).join('') : ''}
-                            <div style="display:flex;gap:10px;">
-                                <button class="btn" style="flex:1;background:#000;margin:0;" onclick="processReview(${r.row},'approve')">核准</button>
-                                <button class="btn" style="flex:1;background:#666;margin:0;" onclick="processReview(${r.row},'reject')">退回</button>
-                            </div></div>`;
-                    });
-                    html += `</div>`;
-                });
-            }
-
-        } else if (tabName === 'reviewed') {
-            // ── 已審核紀錄：按小組分群，通過在上退回在下 ──
-            const reviewed = adminDataCache.reviewedItems || [];
-            if (reviewed.length === 0) {
-                html += '<p style="text-align:center;padding:30px;color:#999;">目前無已審核紀錄</p>';
-            } else {
-                // 按小組分群
-                const reviewedByGroup = {};
-                reviewed.forEach(r => {
-                    const g = r.groupName || '未知小組';
-                    if (!reviewedByGroup[g]) reviewedByGroup[g] = [];
-                    reviewedByGroup[g].push(r);
-                });
-                // 每組內：通過排前，退回排後；同狀態內按時間新到舊
-                Object.keys(reviewedByGroup).forEach(gName => {
-                    reviewedByGroup[gName].sort((a, b) => {
-                        if (a.status !== b.status) return a.status === '通過' ? -1 : 1;
-                        return b.reviewedAt.localeCompare(a.reviewedAt);
-                    });
-                    const items = reviewedByGroup[gName];
-                    const approvedCount = items.filter(r => r.status === '通過').length;
-                    const rejectedCount = items.length - approvedCount;
-                    html += `<div class="group-frame">
-                        <div class="group-header">${gName} 小組
-                            <span style="margin-left:auto;font-size:12px;font-weight:normal;color:#666;">
-                                ✅ ${approvedCount} 通過　❌ ${rejectedCount} 退回
-                            </span>
-                        </div>`;
-                    items.forEach(r => {
-                        const isApproved = r.status === '通過';
-                        html += `<div class="reviewed-item ${isApproved ? 'approved' : 'rejected'}">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                                <span style="font-weight:bold;font-size:14px;">${r.invName} ➔ ${r.tarName}</span>
-                                <span class="reviewed-status ${isApproved ? 'approved' : 'rejected'}">${isApproved ? '✅ 通過' : '❌ 退回'}</span>
-                            </div>
-                            <div style="font-size:12px;color:#999;">
-                                類型: ${r.type || '—'} ｜ $${r.amt}
-                            </div>
-                            <div style="font-size:12px;color:#999;margin-top:2px;">
-                                審核人: <b>${r.reviewedBy}</b> ｜ ${r.reviewedAt}
-                            </div>
-                            ${r.img ? r.img.split(',').map((url, i) => `<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-top:8px;padding:8px;font-size:12px;" onclick="viewImage('${url.trim()}')">📸 查看憑證${r.img.split(',').length > 1 ? ` ${i+1}` : ''}</button>`).join('') : ''}
-                        </div>`;
-                    });
-                    html += `</div>`;
-                });
-            }
-
-        } else if (tabName === 'stats') {
-            const stats = adminDataCache.stats || { totalMembers:0, totalReferrals:0, totalEffective:0 };
-            html += `<div class="stats-grid">
-                <div class="stat-card"><div class="stat-number">${stats.totalMembers}</div><div class="stat-label">總報名人數</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.totalReferrals}</div><div class="stat-label">總推薦筆數</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.totalEffective}</div><div class="stat-label">總達標人數</div></div>
-            </div>`;
-
-        } else if (tabName === 'yanqun') {
-            const yanqunStats = adminDataCache.yanqunStats || [];
-            if (yanqunStats.length === 0) {
-                html += '<p style="text-align:center;padding:30px;color:#999;">目前無雁群資料</p>';
-            } else {
-                yanqunStats.forEach((g, gi) => {
-                    const detailId = `yanqun-detail-${gi}`;
-                    html += `<div class="yanqun-frame">
-                        <div class="yanqun-top">
-                            <div class="yanqun-name">${g.groupName} 小組</div>
-                            <div class="yanqun-meta">
-                                <div class="yanqun-meta-item"><div class="yanqun-meta-num">${g.totalPoints}</div><div class="yanqun-meta-label">總分</div></div>
-                                <div class="yanqun-meta-item"><div class="yanqun-meta-num">${g.totalReferrals}</div><div class="yanqun-meta-label">推薦人數</div></div>
-                                <div class="yanqun-meta-item"><div class="yanqun-meta-num" style="color:#2E7D32;">${g.effectiveCount}</div><div class="yanqun-meta-label">有效推薦</div></div>
-                            </div>
-                        </div>
-                        <button class="yanqun-toggle" onclick="toggleDetail('${detailId}',this)"><span>推薦明細</span><span>▼</span></button>
-                        <div class="yanqun-detail" id="${detailId}">
-                            ${g.influencers.map(inv => `<div class="inv-group">
-                                <div class="inv-group-title">${inv.name} <span style="font-weight:normal;font-size:12px;color:#888;">（總分 ${inv.totalPoints}）</span></div>
-                                ${inv.recruits.map(r => `
-                                    <div class="inv-recruit-row ${r.points===2?'effective':''}" style="flex-direction:column;align-items:flex-start;gap:4px;">
-                                        <div style="display:flex;justify-content:space-between;width:100%;">
-                                            <span>└ 推薦 <b>${r.name}</b></span>
-                                            <span class="tag ${r.points===2?'tag-green':'tag-plus1'}">${r.points===2?'有效推薦 +2':'推薦 +1'}</span>
-                                        </div>
-                                        <div style="font-size:11px;color:#999;padding-left:12px;">
-                                            📅 ${r.recDate} 登記${r.effDate ? ` | 🏆 ${r.effDate} 達標` : ''}
-                                        </div>
-                                    </div>`).join('')}
-                            </div>`).join('')}
-                        </div>
-                    </div>`;
-                });
-            }
-
-        } else if (tabName === 'roster') {
-            const groupedRoster = adminDataCache.groupedRoster || {};
-            const totalCount = adminDataCache.allUsers ? adminDataCache.allUsers.length : 0;
-            html += `<div style="font-size:13px;color:#888;margin-bottom:14px;">共 ${totalCount} 位參賽者</div>`;
-            for (const gName in groupedRoster) {
-                const members = groupedRoster[gName];
-                html += `<div class="roster-group">
-                    <div class="roster-group-header">${gName} 雁群（${members.length} 位）</div>
-                    ${members.map(u => `<div class="roster-member"><span class="roster-member-name">${u.name}</span><span class="roster-member-id">(${u.amId})</span></div>`).join('')}
-                </div>`;
-            }
-
-        } else if (tabName === 'award') {
-            html += `<div id="award-content"><p style="text-align:center;color:#999;padding:20px;">載入中...</p></div>`;
-
-        } else if (tabName === 'contest') {
-            // ── 競賽設定 ──
-            const current = contestStatusCache || { status: 'active' };
-            html += `
-                <div class="group-frame">
-                    <div class="group-header">競賽狀態設定</div>
-                    <div class="contest-option ${current.status==='pending'?'selected':''}" onclick="selectContestOption('pending',this)">
-                        <div class="contest-option-dot"></div>
-                        <div>
-                            <div class="contest-option-label">⏳ 尚未開始</div>
-                            <div class="contest-option-desc">所有成員無法提交推薦</div>
-                        </div>
-                    </div>
-                    <div class="contest-option ${current.status==='active'?'selected':''}" onclick="selectContestOption('active',this)">
-                        <div class="contest-option-dot"></div>
-                        <div>
-                            <div class="contest-option-label">✅ 競賽進行中</div>
-                            <div class="contest-option-desc">開放所有成員提交推薦</div>
-                        </div>
-                    </div>
-                    <div class="contest-option ${current.status==='closed'?'selected':''}" onclick="selectContestOption('closed',this)">
-                        <div class="contest-option-dot"></div>
-                        <div>
-                            <div class="contest-option-label">🔒 競賽已截止</div>
-                            <div class="contest-option-desc">所有成員無法提交推薦</div>
-                        </div>
-                    </div>
-                    <button class="btn" onclick="saveContestStatus()" style="margin-top:20px;">儲存設定</button>
-                </div>`;
-        }
-
-        cont.innerHTML = html;
-        if (tabName === 'award') setTimeout(() => loadGiftData(), 50);
-    }
-
-    // 競賽設定選項
-    let selectedContestStatus = null;
-    function selectContestOption(status, el) {
-        selectedContestStatus = status;
-        document.querySelectorAll('.contest-option').forEach(o => o.classList.remove('selected'));
-        el.classList.add('selected');
-    }
-
-    async function saveContestStatus() {
-        if (!selectedContestStatus) { showToast('請先選擇狀態'); return; }
-        const labelMap = { pending: '尚未開始', active: '競賽進行中', closed: '競賽已截止' };
-        try {
-            const res = await apiCall('setContestStatus', { status: selectedContestStatus, label: labelMap[selectedContestStatus] });
-            showToast(res.message);
-            if (res.success) {
-                contestStatusCache = { status: selectedContestStatus, label: labelMap[selectedContestStatus] };
-                applyContestBanner(contestStatusCache);
-            }
-        } catch(e) { showToast('儲存失敗'); }
-    }
-
-    function toggleDetail(id, btn) {
+function applyContestBanner(contestStatus) {
+    contestStatusCache = contestStatus;
+    ['contest-banner-ref', 'contest-banner-cons'].forEach(function(id) {
         const el = document.getElementById(id);
         if (!el) return;
-        el.classList.toggle('open');
-        btn.querySelector('span:last-child').textContent = el.classList.contains('open') ? '▲' : '▼';
-    }
+        if (!contestStatus || contestStatus.status === 'active') { el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        el.className = 'contest-banner ' + contestStatus.status;
+        el.innerHTML = contestStatus.status === 'pending' ? '⏳ 目前競賽尚未開始，暫時無法提交' : '🔒 競賽已截止，無法繼續提交';
+    });
+    const isActive = !contestStatus || contestStatus.status === 'active';
+    ['btn-ref', 'btn-cons'].forEach(function(id) {
+        const btn = document.getElementById(id);
+        if (btn) { btn.disabled = !isActive; btn.style.opacity = isActive ? '1' : '0.4'; }
+    });
+}
 
-    function viewImage(url) {
-        document.getElementById('viewer-img').src = url;
-        document.getElementById('image-viewer').style.display = 'flex';
-    }
-
-    async function processReview(row, action) {
-        if (!confirm("確定執行此操作？")) return;
-        try {
-            const res = await apiCall(action, { row, reviewerName: state.reviewerName });
-            showToast(res.message);
-            setTimeout(() => { loadAdmin(); refreshData(); }, 1000);
-        } catch(e) { showToast("操作失敗"); }
-    }
-
-    async function checkTarId() {
-        const tarId = document.getElementById('tarId').value.trim();
-        const warn = document.getElementById('tarId-warn');
-        if (!tarId) { warn.classList.remove('show'); return; }
-        try {
-            const res = await apiCall(`checkTarId&tarId=${tarId}`);
-            if (res.exists) { warn.innerText = res.message; warn.classList.add('show'); }
-            else warn.classList.remove('show');
-        } catch(e) { warn.classList.remove('show'); }
-    }
-
-    async function compressImage(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX = 1200;
-                    let w = img.width, h = img.height;
-                    if (w > h && w > MAX) { h = Math.round(h*MAX/w); w = MAX; }
-                    else if (h > MAX) { w = Math.round(w*MAX/h); h = MAX; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(canvas.toDataURL('image/jpeg', 0.75));
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    window.onload = () => {
-        setupImageInput('tarImg', 'tarImg-preview', 'ref');
-        setupImageInput('cImg', 'cImg-preview', 'cons');
-        const isDev = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
-        const goToHash = () => {
-            const hash = window.location.hash.replace('#', '');
-            if (hash && ['ref','cons','group','adm'].includes(hash)) switchTab(hash);
-        };
-        if (isDev) { state.uid = "Uc374b29901f192ad5e8e0daf604bd238"; refreshData().then(goToHash); }
-        else {
-            liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
-                if (!liff.isLoggedIn()) liff.login();
-                else liff.getProfile().then(p => { state.uid = p.userId; refreshData().then(goToHash); });
-            }).catch(err => console.error(err));
-        }
-    };
-
-    document.getElementById('refForm').onsubmit = (e) => handleForm(e, 'ref');
-    document.getElementById('submitConsForm').onsubmit = (e) => handleForm(e, 'cons');
-
-    async function handleForm(e, type) {
-        e.preventDefault();
-        // 前端再次確認競賽狀態
-        if (contestStatusCache && contestStatusCache.status !== 'active') {
-            showToast(contestStatusCache.status === 'pending' ? '競賽尚未開始' : '競賽已截止');
+// ── 主資料載入 ──
+async function refreshData() {
+    try {
+        const res = await apiCall('getInitData');
+        if (res.data && res.data.error === '未註冊') {
+            document.getElementById('reg-page').style.display = 'block';
+            document.getElementById('ref').style.display = 'none';
+            document.getElementById('main-tabs').style.display = 'none';
             return;
         }
-        const btnId = type === 'ref' ? 'btn-ref' : 'btn-cons';
-        const btn = document.getElementById(btnId);
-        const originalText = type === 'ref' ? "提交數據" : "確認提交";
-        const fileKey = type === 'ref' ? 'ref' : 'cons';
-        if (selectedFiles[fileKey].length === 0) { showToast('請至少上傳一張憑證圖片'); return; }
-        btn.disabled = true; btn.innerText = "上傳中...";
-        const imageDataArray = await Promise.all(selectedFiles[fileKey].map(file => compressImage(file)));
-        const payload = {
-            uid: state.uid,
-            invId: document.getElementById(type==='ref'?'inv-select':'cInvId').value,
-            invName: type==='ref' ? document.getElementById('inv-select').selectedOptions[0].text : document.getElementById('cInvName').value,
-            tarId: document.getElementById(type==='ref'?'tarId':'cTarId').value,
-            tarName: document.getElementById(type==='ref'?'tarName':'cTarName').value,
-            date: type==='ref' ? document.getElementById('tarDate').value : new Date().toISOString().split('T')[0],
-            amt: document.getElementById(type==='ref'?'tarAmt':'cAmt').value,
-            imageData: imageDataArray,
-            type: type==='ref' ? "成功推薦" : "增加消費"
-        };
-        try {
-            const res = await apiCall('submitReferral', payload);
-            showToast(res.message);
-            setTimeout(() => { location.reload(); }, 1500);
-        } catch(err) { showToast("提交失敗"); btn.disabled = false; btn.innerText = originalText; }
-    }
+        if (res.data) {
+            const d = res.data;
+            document.getElementById('reg-page').style.display = 'none';
+            document.getElementById('main-tabs').style.display = 'flex';
+            applyContestBanner(d.contestStatus);
+            window._groupList = d.groupList || [];
 
-    // ==========================================
-    // 頒獎管理
-    // ==========================================
+            const classroom = d.myProfile.classroom || '';
+            const group = d.myProfile.group || '';
+            const classroomEl = document.getElementById('profile-classroom');
+            const groupEl = document.getElementById('profile-group');
+            const dividerEl = document.getElementById('profile-divider');
+            if (classroom) { classroomEl.innerText = '所屬教室：' + classroom; classroomEl.style.display = 'inline'; } else { classroomEl.style.display = 'none'; }
+            if (group) { groupEl.innerText = '所屬雁群：' + (group || '多重授權'); groupEl.style.display = 'inline'; } else { groupEl.style.display = 'none'; }
+            dividerEl.style.display = (classroom && group) ? 'inline' : 'none';
 
-    async function loadGiftData() {
-        try {
-            const res = await apiCall('getGiftData');
-            if (!res.success || (res.data && res.data.error)) {
-                document.getElementById('award-content').innerHTML = '<p style="text-align:center;color:red;padding:20px;">無法取得資料</p>';
-                return;
+            document.getElementById('inv-select').innerHTML = d.participants.map(function(m) {
+                return '<option value="' + m.id + '">' + m.name + '</option>';
+            }).join('');
+
+            // 增加消費
+            const groupedNewbies = d.newbies.reduce(function(acc, obj) {
+                if (!acc[obj.group]) acc[obj.group] = [];
+                acc[obj.group].push(obj);
+                return acc;
+            }, {});
+            let consHtml = '';
+            Object.keys(groupedNewbies).forEach(function(gName) {
+                consHtml += '<div class="group-frame"><div class="group-header">' + gName + ' 雁群</div>';
+                groupedNewbies[gName].forEach(function(m) {
+                    const isReached = m.isReached;
+                    consHtml += '<div class="card" onclick="' + (isReached ? '' : "selectForCons('" + m.tarId + "','" + m.name + "','" + m.invId + "','" + m.invName + "')") + '" style="' + (isReached ? 'opacity:0.5;background:#F0F0F0;' : '') + '">';
+                    consHtml += '<div><b>' + (m.name || '未知') + '</b> <small>(' + m.tarId + ')</small>';
+                    consHtml += '<br><small style="color:#888;">由 <b>' + m.invName + '</b> 推薦</small>';
+                    consHtml += '<br><small>累計 $' + m.spent + '</small></div>';
+                    consHtml += '<div style="color:var(--accent);font-weight:bold;">' + (isReached ? '✅ 已達標' : '補填 ➔') + '</div></div>';
+                });
+                consHtml += '</div>';
+            });
+            document.getElementById('member-list').innerHTML = consHtml || '<p style="text-align:center;color:#999;padding:20px;">目前無名單</p>';
+
+            // 雁群小組
+            let groupHtml = d.groupPerf.map(function(g) {
+                let influencersHtml = g.influencers.map(function(inv) {
+                    let recruitsHtml = Object.values(inv.recruits).map(function(r) {
+                        return '<div class="recruit-detail"><div style="display:flex;justify-content:space-between;"><span>推薦 <b>' + r.name + '</b></span><span class="tag ' + (r.points === 2 ? 'tag-green' : 'tag-plus1') + '">' + (r.points === 2 ? '有效推薦 +2' : '+1') + '</span></div><div style="font-size:11px;color:#999;margin-top:4px;">📅 登記: ' + r.recDate + (r.effDate ? ' | 🏆 達標: ' + r.effDate : ' (累計 $' + r.spent + ')') + '</div></div>';
+                    }).join('');
+                    return '<div class="perf-item"><div class="perf-title-row"><span style="font-weight:bold;font-size:16px;">' + inv.name + '</span><span style="font-size:13px;color:#666;">推薦:' + inv.count + ' | <b style="color:var(--accent)">總分:' + inv.totalPoints + '</b></span></div>' + recruitsHtml + '</div>';
+                }).join('');
+                return '<div class="group-frame"><div class="group-header">' + g.groupName + ' 小組</div><div class="group-score-bar"><div class="group-score-item"><div class="group-score-num">' + g.groupTotalPoints + '</div><div class="group-score-label">總分</div></div><div class="group-score-item"><div class="group-score-num" style="color:#333;">' + g.groupTotalReferrals + '</div><div class="group-score-label">推薦人數</div></div><div class="group-score-item"><div class="group-score-num" style="color:#2E7D32;">' + g.groupEffectiveCount + '</div><div class="group-score-label">有效推薦</div></div></div>' + influencersHtml + '</div>';
+            }).join('');
+            document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無推薦紀錄</p>';
+
+            if (d.isPresident) {
+                document.getElementById('t-adm').style.display = 'block';
+                state.reviewerName = d.myProfile.name || '會長';
             }
-            giftDataCache = res.data;
-            renderAwardContent('referrals');
-        } catch(e) {
-            document.getElementById('award-content').innerHTML = '<p style="text-align:center;color:red;padding:20px;">連線失敗</p>';
         }
+    } catch(e) {
+        console.error('Refresh Error:', e);
+        showToast('數據載入異常，請重整');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
     }
+}
 
-    function renderAwardContent(subTab) {
-        if (!giftDataCache) return;
-        const { gifts, groupedReferrals } = giftDataCache;
+// ── 身分認領 ──
+async function handleIdentity(action) {
+    const amId = document.getElementById('regAmId').value;
+    if (!amId) { alert('請輸入安麗編號'); return; }
+    document.getElementById('loading').style.display = 'flex';
+    try {
+        const res = await apiCall('linkIdentity', { uid: state.uid, amId: amId, name: '', group: '' });
+        alert(res.message);
+        if (res.success) location.reload();
+        else document.getElementById('loading').style.display = 'none';
+    } catch(e) { alert('連線失敗'); document.getElementById('loading').style.display = 'none'; }
+}
 
-        let html = `
-            <div class="sub-tab-bar" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
-                <div class="sub-tab ${subTab==='referrals'?'active':''}" onclick="renderAwardContent('referrals')">推薦領獎</div>
-                <div class="sub-tab ${subTab==='unawarded'?'active':''}" onclick="renderAwardContent('unawarded')">未領獎</div>
-                <div class="sub-tab ${subTab==='gifts'?'active':''}" onclick="renderAwardContent('gifts')">禮物設定</div>
-            </div>`;
+function switchTab(id) {
+    document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none'; });
+    const targetPage = document.getElementById(id);
+    if (targetPage) targetPage.style.display = 'block';
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    const activeTab = document.getElementById('t-' + id);
+    if (activeTab) activeTab.classList.add('active');
+    if (id === 'adm') loadAdmin();
+}
 
-        if (subTab === 'referrals') {
-            if (!groupedReferrals || groupedReferrals.length === 0) {
-                html += '<p style="text-align:center;color:#999;padding:20px;">尚無推薦紀錄</p>';
-            } else {
-                groupedReferrals.forEach(g => {
-                    html += `<div class="group-frame"><div class="group-header">${g.groupName} 小組</div>`;
-                    g.influencers.forEach(inv => {
-                        html += `<div class="award-inv-block"><div class="award-inv-title">${inv.invName} 推薦 ${inv.recruits.length} 人</div>`;
-                        inv.recruits.forEach(rec => {
-                            const isEffective = rec.points === 2;
-                            const ar = rec.awardRecord;
-                            let statusHtml = '', rowClass = 'status-none';
-                            if (ar) {
-                                if (ar.status === '已領取') {
-                                    rowClass = 'status-claimed';
-                                    statusHtml = `<span class="award-status-claimed">✅ ${ar.claimDate} 領取 ${ar.giftName}</span>`;
-                                } else {
-                                    rowClass = 'status-pending';
-                                    statusHtml = `<span class="award-status-pending">⏳ 待領取（${ar.registerDate} 登記）</span>
-                                        <button class="award-btn-green" onclick="openConfirmModal(${ar.row},'${rec.tarName}')">確認已領取</button>`;
-                                }
-                            } else {
-                                rowClass = 'status-none';
-                                statusHtml = `<span class="award-status-none">未登記</span>
-                                    <button class="award-btn-sm" onclick="openAwardModal('${inv.invId}','${rec.tarId}','${rec.tarName}','${inv.invName}')">登記禮物 ➔</button>`;
-                            }
-                            html += `<div class="award-recruit-row ${isEffective?'effective':''} ${rowClass}">
-                                <div class="award-recruit-name">${rec.tarName}
-                                    <span class="tag ${isEffective?'tag-green':'tag-plus1'}" style="margin-left:6px;">${isEffective?'有效推薦':'一般推薦'}</span>
-                                </div>
-                                <div class="award-status-row">${statusHtml}</div>
-                            </div>`;
-                        });
-                        html += `</div>`;
-                    });
-                    html += `</div>`;
+function selectForCons(tid, tname, iid, iname) {
+    document.getElementById('cons-form-area').style.display = 'block';
+    document.getElementById('selected-name').innerText = '為「' + tname + '」補填消費紀錄';
+    document.getElementById('cTarId').value = tid;
+    document.getElementById('cTarName').value = tname;
+    document.getElementById('cInvId').value = iid;
+    document.getElementById('cInvName').value = iname;
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+// ── 會長專區 ──
+async function loadAdmin() {
+    const cont = document.getElementById('admin-content');
+    cont.innerHTML = '<p style="text-align:center;padding:20px;color:#999;">載入中...</p>';
+    try {
+        const res = await apiCall('getAdminDashboard');
+        adminDataCache = res.data ? res.data : res;
+        renderAdminTab('regApprove');
+    } catch(e) { cont.innerHTML = '<p style="text-align:center;padding:30px;color:red;">連線失敗</p>'; }
+}
+
+function renderAdminTab(tabName) {
+    if (!adminDataCache) return;
+    const cont = document.getElementById('admin-content');
+    const tabs = ['regApprove', 'pending', 'reviewed', 'stats', 'yanqun', 'roster', 'award', 'contest'];
+    const tabLabels = ['報名審核', '待審核', '審核紀錄', '績效統計', '雁群統計', '參賽名單', '頒獎管理', '競賽設定'];
+    let html = '<div class="sub-tab-bar" style="grid-template-columns:repeat(4,1fr);">';
+    tabs.forEach(function(t, i) {
+        html += '<div class="sub-tab ' + (tabName === t ? 'active' : '') + '" onclick="renderAdminTab(\'' + t + '\')">' + tabLabels[i] + '</div>';
+    });
+    html += '</div>';
+
+    if (tabName === 'regApprove') {
+        const pendingRegs = adminDataCache.pendingRegistrations || [];
+        if (pendingRegs.length === 0) {
+            html += '<p style="text-align:center;padding:30px;color:#999;">目前無待確認報名 ✨</p>';
+        } else {
+            const regByGroup = {};
+            pendingRegs.forEach(function(r) {
+                if (!regByGroup[r.group]) regByGroup[r.group] = [];
+                regByGroup[r.group].push(r);
+            });
+            Object.keys(regByGroup).forEach(function(gName) {
+                html += '<div class="group-frame"><div class="group-header">' + gName + ' 雁群（' + regByGroup[gName].length + ' 人待確認）</div>';
+                regByGroup[gName].forEach(function(r) {
+                    html += '<div class="reg-pending-item"><div class="reg-pending-name">' + r.name + '</div><div class="reg-pending-meta">安麗編號：' + r.amId + '　｜　' + (r.lineId ? '已綁定 LINE' : '未綁定（代報名）') + '</div><div class="reg-action-row"><button class="btn" style="flex:1;margin:0;background:#2E7D32;padding:10px;" onclick="approveRegister(\'' + r.amId + '\',\'' + r.name + '\')">✅ 確認報名</button><button class="btn" style="flex:1;margin:0;background:#D32F2F;padding:10px;" onclick="rejectRegister(\'' + r.amId + '\',\'' + r.name + '\')">❌ 退回</button></div></div>';
                 });
-            }
-        } else if (subTab === 'unawarded') {
-            if (!groupedReferrals || groupedReferrals.length === 0) {
-                html += '<p style="text-align:center;color:#999;padding:20px;">尚無推薦紀錄</p>';
-            } else {
-                let totalUnawarded = 0;
-                groupedReferrals.forEach(g => {
-                    const unawardedInGroup = [];
-                    g.influencers.forEach(inv => {
-                        inv.recruits.forEach(rec => {
-                            if (!rec.awardRecord) unawardedInGroup.push({ ...rec, invId: inv.invId, invName: inv.invName });
-                        });
-                    });
-                    if (unawardedInGroup.length === 0) return;
-                    totalUnawarded += unawardedInGroup.length;
-                    html += `<div class="group-frame">
-                        <div class="group-header" style="border-left-color:#FF8F00;color:#FF8F00;">${g.groupName} 小組（${unawardedInGroup.length} 人未領）</div>`;
-                    unawardedInGroup.forEach(rec => {
-                        html += `<div class="card">
-                            <div>
-                                <b>${rec.tarName}</b>
-                                <span class="tag ${rec.points===2?'tag-green':'tag-plus1'}" style="margin-left:6px;">${rec.points===2?'有效推薦':'一般推薦'}</span>
-                                <br><small style="color:#999;">推薦人：${rec.invName}</small>
-                            </div>
-                            <button class="award-btn-sm" onclick="openAwardModal('${rec.invId}','${rec.tarId}','${rec.tarName}','${rec.invName}')">登記 ➔</button>
-                        </div>`;
-                    });
-                    html += `</div>`;
-                });
-                if (totalUnawarded === 0) html += '<p style="text-align:center;color:#2E7D32;padding:20px;font-weight:bold;">🎉 所有人都已登記禮物！</p>';
-            }
-        } else if (subTab === 'gifts') {
-            const classroom = giftDataCache.myClassroom || "";
-            html += `
-                <div class="group-frame">
-                    <div class="group-header">新增禮物</div>
-                    <div style="font-size:12px;color:var(--accent);font-weight:bold;margin-bottom:10px;">教室：${classroom}</div>
-                    <label>禮物名稱</label>
-                    <input type="text" id="new-gift-name" placeholder="例如：AirPods Pro">
-                    <label>數量（0 代表無限制）</label>
-                    <input type="number" id="new-gift-total" placeholder="0">
-                    <label>備註（選填）</label>
-                    <input type="text" id="new-gift-note" placeholder="">
-                    <button class="btn" onclick="addGift()">新增禮物</button>
-                </div>
-                <div class="group-frame"><div class="group-header">目前禮物清單（${classroom}）</div>`;
-            if (!gifts || gifts.length === 0) {
-                html += `<p style="text-align:center;color:#999;padding:10px;">尚無禮物，請先新增</p>`;
-            } else {
-                gifts.forEach(g => {
-                    const pct = g.total > 0 ? Math.round((g.used/g.total)*100) : 0;
-                    html += `<div class="card" style="flex-direction:column;align-items:flex-start;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:8px;">
-                            <span style="font-weight:bold;font-size:15px;">🎁 ${g.name}</span>
-                            <button type="button" onclick="deleteGift('${g.name}')" style="background:none;border:none;color:#D32F2F;font-size:13px;font-weight:bold;cursor:pointer;padding:4px 8px;">刪除</button>
-                        </div>
-                        ${g.total > 0 ? `
-                            <div style="width:100%;background:#F0F0F0;border-radius:4px;height:6px;margin-bottom:6px;">
-                                <div style="width:${pct}%;background:${pct>=100?'#D32F2F':'#2E7D32'};height:6px;border-radius:4px;"></div>
-                            </div>
-                            <div style="font-size:12px;color:#999;">已發 ${g.used} / 共 ${g.total}（剩 ${g.remaining}）</div>
-                        ` : `<div style="font-size:12px;color:#999;">已發 ${g.used}（無數量限制）</div>`}
-                        ${g.note ? `<div style="font-size:11px;color:#BBB;margin-top:2px;">${g.note}</div>` : ''}
-                    </div>`;
-                });
-            }
-            html += `</div>`;
+                html += '</div>';
+            });
         }
 
-        document.getElementById('award-content').innerHTML = html;
-    }
-
-    function buildGiftOptions() {
-        if (!giftDataCache || !giftDataCache.gifts) return '';
-        return giftDataCache.gifts.map(g => {
-            const disabled = g.remaining === 0 ? 'disabled' : '';
-            const label = g.remaining === 0 ? `${g.name}（已額滿）` : `${g.name}（剩 ${g.remaining}）`;
-            return `<option value="${g.name}" ${disabled}>${label}</option>`;
-        }).join('');
-    }
-
-    function openAwardModal(invId, tarId, tarName, invName) {
-        if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) { showToast('請先在「禮物設定」新增禮物'); return; }
-        modalPayload = { invId, tarId, tarName };
-        document.getElementById('modal-tar-name').innerText = `登記禮物：${tarName}`;
-        document.getElementById('modal-inv-name').innerText = `推薦人：${invName}`;
-        document.getElementById('modal-gift').innerHTML = buildGiftOptions();
-        document.getElementById('modal-claimDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('modal-note').value = '';
-        document.getElementById('modal-status').value = '已領取';
-        document.getElementById('modal-gift-section').style.display = 'block';
-        document.getElementById('award-modal').style.display = 'flex';
-    }
-
-    function closeAwardModal() { document.getElementById('award-modal').style.display = 'none'; }
-
-    function toggleModalGiftSection() {
-        document.getElementById('modal-gift-section').style.display =
-            document.getElementById('modal-status').value === '已領取' ? 'block' : 'none';
-    }
-
-    async function submitAwardModal() {
-        const status    = document.getElementById('modal-status').value;
-        const giftName  = status === '已領取' ? document.getElementById('modal-gift').value : '';
-        const claimDate = status === '已領取' ? document.getElementById('modal-claimDate').value : '';
-        const note      = document.getElementById('modal-note').value;
-        if (status === '已領取' && !giftName) { showToast('請選擇禮物'); return; }
-        try {
-            const res = await apiCall('assignGift', {
-                invId: modalPayload.invId, tarId: modalPayload.tarId, tarName: modalPayload.tarName,
-                giftName, status, claimDate, note, classroom: giftDataCache.myClassroom || ""
+    } else if (tabName === 'pending') {
+        const pendingGroups = adminDataCache.pending || [];
+        if (pendingGroups.length === 0) {
+            html += '<p style="text-align:center;padding:30px;color:#999;">目前無待審核案件 ✨</p>';
+        } else {
+            pendingGroups.forEach(function(g) {
+                html += '<div class="black-header">[ ' + g.groupName + ' ] 待審核</div><div class="card-body">';
+                g.items.forEach(function(r) {
+                    html += '<div style="margin-bottom:20px;border-bottom:1px dashed #EEE;padding-bottom:15px;"><div style="font-size:16px;font-weight:bold;margin-bottom:6px;">' + r.invName + ' ➔ ' + r.tarName + ' <span style="font-weight:normal;color:#666;">($' + r.amt + ')</span></div><div style="font-size:12px;color:#999;margin-bottom:10px;">類型: ' + (r.type || '未標記') + '</div>';
+                    if (r.img) {
+                        r.img.split(',').forEach(function(url, i) {
+                            html += '<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-bottom:8px;padding:10px;height:auto;" onclick="viewImage(\'' + url.trim() + '\')">📸 查看憑證' + (r.img.split(',').length > 1 ? ' ' + (i + 1) : '') + '</button>';
+                        });
+                    }
+                    html += '<div style="display:flex;gap:10px;"><button class="btn" style="flex:1;background:#000;margin:0;" onclick="processReview(' + r.row + ',\'approve\')">核准</button><button class="btn" style="flex:1;background:#666;margin:0;" onclick="processReview(' + r.row + ',\'reject\')">退回</button></div></div>';
+                });
+                html += '</div>';
             });
-            showToast(res.message);
-            if (res.success) { closeAwardModal(); giftDataCache = null; await loadGiftData(); }
-        } catch(e) { showToast('連線失敗'); }
-    }
+        }
 
-    function openConfirmModal(row, tarName) {
-        if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) { showToast('請先在「禮物設定」新增禮物'); return; }
-        confirmPayload = { row };
-        document.getElementById('confirm-tar-name').innerText = `確認領取：${tarName}`;
-        document.getElementById('confirm-gift').innerHTML = buildGiftOptions();
-        document.getElementById('confirm-claimDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('confirm-modal').style.display = 'flex';
-    }
-
-    function closeConfirmModal() { document.getElementById('confirm-modal').style.display = 'none'; }
-
-    async function submitConfirmModal() {
-        const giftName  = document.getElementById('confirm-gift').value;
-        const claimDate = document.getElementById('confirm-claimDate').value;
-        if (!giftName) { showToast('請選擇禮物'); return; }
-        try {
-            const res = await apiCall('confirmGift', {
-                row: confirmPayload.row, giftName, claimDate, classroom: giftDataCache.myClassroom || ""
+    } else if (tabName === 'reviewed') {
+        const reviewed = adminDataCache.reviewedItems || [];
+        if (reviewed.length === 0) {
+            html += '<p style="text-align:center;padding:30px;color:#999;">目前無已審核紀錄</p>';
+        } else {
+            const reviewedByGroup = {};
+            reviewed.forEach(function(r) {
+                const g = r.groupName || '未知小組';
+                if (!reviewedByGroup[g]) reviewedByGroup[g] = [];
+                reviewedByGroup[g].push(r);
             });
-            showToast(res.message);
-            if (res.success) { closeConfirmModal(); giftDataCache = null; await loadGiftData(); }
-        } catch(e) { showToast('連線失敗'); }
+            Object.keys(reviewedByGroup).forEach(function(gName) {
+                reviewedByGroup[gName].sort(function(a, b) {
+                    if (a.status !== b.status) return a.status === '通過' ? -1 : 1;
+                    return b.reviewedAt.localeCompare(a.reviewedAt);
+                });
+                const items = reviewedByGroup[gName];
+                const approvedCount = items.filter(function(r) { return r.status === '通過'; }).length;
+                const rejectedCount = items.length - approvedCount;
+                html += '<div class="group-frame"><div class="group-header">' + gName + ' 小組 <span style="margin-left:auto;font-size:12px;font-weight:normal;color:#666;">✅ ' + approvedCount + ' 通過　❌ ' + rejectedCount + ' 退回</span></div>';
+                items.forEach(function(r) {
+                    const isApproved = r.status === '通過';
+                    html += '<div class="reviewed-item ' + (isApproved ? 'approved' : 'rejected') + '"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-weight:bold;font-size:14px;">' + r.invName + ' ➔ ' + r.tarName + '</span><span class="reviewed-status ' + (isApproved ? 'approved' : 'rejected') + '">' + (isApproved ? '✅ 通過' : '❌ 退回') + '</span></div><div style="font-size:12px;color:#999;">類型: ' + (r.type || '—') + ' ｜ $' + r.amt + '</div><div style="font-size:12px;color:#999;margin-top:2px;">審核人: <b>' + r.reviewedBy + '</b> ｜ ' + r.reviewedAt + '</div>';
+                    if (r.img) {
+                        r.img.split(',').forEach(function(url, i) {
+                            html += '<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-top:8px;padding:8px;font-size:12px;" onclick="viewImage(\'' + url.trim() + '\')">📸 查看憑證' + (r.img.split(',').length > 1 ? ' ' + (i + 1) : '') + '</button>';
+                        });
+                    }
+                    html += '</div>';
+                });
+                html += '</div>';
+            });
+        }
+
+    } else if (tabName === 'stats') {
+        const stats = adminDataCache.stats || { totalMembers: 0, totalReferrals: 0, totalEffective: 0 };
+        html += '<div class="stats-grid"><div class="stat-card"><div class="stat-number">' + stats.totalMembers + '</div><div class="stat-label">總報名人數</div></div><div class="stat-card"><div class="stat-number">' + stats.totalReferrals + '</div><div class="stat-label">總推薦筆數</div></div><div class="stat-card"><div class="stat-number">' + stats.totalEffective + '</div><div class="stat-label">總達標人數</div></div></div>';
+
+    } else if (tabName === 'yanqun') {
+        const yanqunStats = adminDataCache.yanqunStats || [];
+        if (yanqunStats.length === 0) {
+            html += '<p style="text-align:center;padding:30px;color:#999;">目前無雁群資料</p>';
+        } else {
+            yanqunStats.forEach(function(g, gi) {
+                const detailId = 'yanqun-detail-' + gi;
+                html += '<div class="yanqun-frame"><div class="yanqun-top"><div class="yanqun-name">' + g.groupName + ' 小組</div><div class="yanqun-meta"><div class="yanqun-meta-item"><div class="yanqun-meta-num">' + g.totalPoints + '</div><div class="yanqun-meta-label">總分</div></div><div class="yanqun-meta-item"><div class="yanqun-meta-num">' + g.totalReferrals + '</div><div class="yanqun-meta-label">推薦人數</div></div><div class="yanqun-meta-item"><div class="yanqun-meta-num" style="color:#2E7D32;">' + g.effectiveCount + '</div><div class="yanqun-meta-label">有效推薦</div></div></div></div>';
+                html += '<button class="yanqun-toggle" onclick="toggleDetail(\'' + detailId + '\',this)"><span>推薦明細</span><span>▼</span></button>';
+                html += '<div class="yanqun-detail" id="' + detailId + '">';
+                g.influencers.forEach(function(inv) {
+                    html += '<div class="inv-group"><div class="inv-group-title">' + inv.name + ' <span style="font-weight:normal;font-size:12px;color:#888;">（總分 ' + inv.totalPoints + '）</span></div>';
+                    inv.recruits.forEach(function(r) {
+                        html += '<div class="inv-recruit-row ' + (r.points === 2 ? 'effective' : '') + '" style="flex-direction:column;align-items:flex-start;gap:4px;"><div style="display:flex;justify-content:space-between;width:100%;"><span>└ 推薦 <b>' + r.name + '</b></span><span class="tag ' + (r.points === 2 ? 'tag-green' : 'tag-plus1') + '">' + (r.points === 2 ? '有效推薦 +2' : '推薦 +1') + '</span></div><div style="font-size:11px;color:#999;padding-left:12px;">📅 ' + r.recDate + ' 登記' + (r.effDate ? ' | 🏆 ' + r.effDate + ' 達標' : '') + '</div></div>';
+                    });
+                    html += '</div>';
+                });
+                html += '</div></div>';
+            });
+        }
+
+    } else if (tabName === 'roster') {
+        const groupedRoster = adminDataCache.groupedRoster || {};
+        const totalCount = adminDataCache.allUsers ? adminDataCache.allUsers.length : 0;
+        html += '<div style="font-size:13px;color:#888;margin-bottom:14px;">共 ' + totalCount + ' 位參賽者</div>';
+        Object.keys(groupedRoster).forEach(function(gName) {
+            const members = groupedRoster[gName];
+            html += '<div class="roster-group"><div class="roster-group-header">' + gName + ' 雁群（' + members.length + ' 位）</div>';
+            members.forEach(function(u) {
+                html += '<div class="roster-member"><span style="font-weight:bold;">' + u.name + '</span><span style="font-size:12px;color:#999;">(' + u.amId + ')</span></div>';
+            });
+            html += '</div>';
+        });
+
+    } else if (tabName === 'award') {
+        html += '<div id="award-content"><p style="text-align:center;color:#999;padding:20px;">載入中...</p></div>';
+
+    } else if (tabName === 'contest') {
+        const current = contestStatusCache || { status: 'active' };
+        const options = [
+            { value: 'pending', label: '⏳ 尚未開始', desc: '所有成員無法提交推薦' },
+            { value: 'active', label: '✅ 競賽進行中', desc: '開放所有成員提交推薦' },
+            { value: 'closed', label: '🔒 競賽已截止', desc: '所有成員無法提交推薦' }
+        ];
+        html += '<div class="group-frame"><div class="group-header">競賽狀態設定</div>';
+        options.forEach(function(o) {
+            html += '<div class="contest-option ' + (current.status === o.value ? 'selected' : '') + '" onclick="selectContestOption(\'' + o.value + '\',this)"><div class="contest-option-dot"></div><div><div class="contest-option-label">' + o.label + '</div><div class="contest-option-desc">' + o.desc + '</div></div></div>';
+        });
+        html += '<button class="btn" onclick="saveContestStatus()" style="margin-top:20px;">儲存設定</button></div>';
     }
 
-    async function addGift() {
-        const name  = document.getElementById('new-gift-name').value.trim();
-        const total = document.getElementById('new-gift-total').value;
-        const note  = document.getElementById('new-gift-note').value.trim();
-        if (!name) { showToast('請填寫禮物名稱'); return; }
-        try {
-            const res = await apiCall('addGift', { name, total, note, classroom: giftDataCache.myClassroom || "" });
-            showToast(res.message);
-            if (res.success) { giftDataCache = null; await loadGiftData(); }
-        } catch(e) { showToast('連線失敗'); }
-    }
+    cont.innerHTML = html;
+    if (tabName === 'award') setTimeout(function() { loadGiftData(); }, 50);
+}
 
-    async function deleteGift(name) {
-        if (!confirm(`確定刪除「${name}」？`)) return;
-        try {
-            const res = await apiCall('deleteGift', { name, classroom: giftDataCache.myClassroom || "" });
-            showToast(res.message);
-            if (res.success) { giftDataCache = null; await loadGiftData(); }
-        } catch(e) { showToast('連線失敗'); }
+function toggleDetail(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+    btn.querySelector('span:last-child').textContent = el.classList.contains('open') ? '▲' : '▼';
+}
+
+async function processReview(row, action) {
+    if (!confirm('確定執行此操作？')) return;
+    try {
+        const res = await apiCall(action, { row: row, reviewerName: state.reviewerName });
+        showToast(res.message);
+        setTimeout(function() { loadAdmin(); refreshData(); }, 1000);
+    } catch(e) { showToast('操作失敗'); }
+}
+
+async function checkTarId() {
+    const tarId = document.getElementById('tarId').value.trim();
+    const warn = document.getElementById('tarId-warn');
+    if (!tarId) { warn.classList.remove('show'); return; }
+    try {
+        const res = await apiCall('checkTarId&tarId=' + tarId);
+        if (res.exists) { warn.innerText = res.message; warn.classList.add('show'); }
+        else warn.classList.remove('show');
+    } catch(e) { warn.classList.remove('show'); }
+}
+
+// ── 表單提交 ──
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('refForm').onsubmit = function(e) { handleForm(e, 'ref'); };
+    document.getElementById('submitConsForm').onsubmit = function(e) { handleForm(e, 'cons'); };
+});
+
+async function handleForm(e, type) {
+    e.preventDefault();
+    if (contestStatusCache && contestStatusCache.status !== 'active') {
+        showToast(contestStatusCache.status === 'pending' ? '競賽尚未開始' : '競賽已截止');
+        return;
     }
+    const btnId = type === 'ref' ? 'btn-ref' : 'btn-cons';
+    const btn = document.getElementById(btnId);
+    const originalText = type === 'ref' ? '提交數據' : '確認提交';
+    const fileKey = type === 'ref' ? 'ref' : 'cons';
+    if (selectedFiles[fileKey].length === 0) { showToast('請至少上傳一張憑證圖片'); return; }
+    btn.disabled = true; btn.innerText = '上傳中...';
+    const imageDataArray = await Promise.all(selectedFiles[fileKey].map(function(f) { return compressImage(f); }));
+    const payload = {
+        uid: state.uid,
+        invId: document.getElementById(type === 'ref' ? 'inv-select' : 'cInvId').value,
+        invName: type === 'ref' ? document.getElementById('inv-select').selectedOptions[0].text : document.getElementById('cInvName').value,
+        tarId: document.getElementById(type === 'ref' ? 'tarId' : 'cTarId').value,
+        tarName: document.getElementById(type === 'ref' ? 'tarName' : 'cTarName').value,
+        date: type === 'ref' ? document.getElementById('tarDate').value : new Date().toISOString().split('T')[0],
+        amt: document.getElementById(type === 'ref' ? 'tarAmt' : 'cAmt').value,
+        imageData: imageDataArray,
+        type: type === 'ref' ? '成功推薦' : '增加消費'
+    };
+    try {
+        const res = await apiCall('submitReferral', payload);
+        showToast(res.message);
+        setTimeout(function() { location.reload(); }, 1500);
+    } catch(err) { showToast('提交失敗'); btn.disabled = false; btn.innerText = originalText; }
+}
+
+// ── 競賽設定 ──
+let selectedContestStatus = null;
+function selectContestOption(status, el) {
+    selectedContestStatus = status;
+    document.querySelectorAll('.contest-option').forEach(function(o) { o.classList.remove('selected'); });
+    el.classList.add('selected');
+}
+async function saveContestStatus() {
+    if (!selectedContestStatus) { showToast('請先選擇狀態'); return; }
+    const labelMap = { pending: '尚未開始', active: '競賽進行中', closed: '競賽已截止' };
+    try {
+        const res = await apiCall('setContestStatus', { status: selectedContestStatus, label: labelMap[selectedContestStatus] });
+        showToast(res.message);
+        if (res.success) { contestStatusCache = { status: selectedContestStatus, label: labelMap[selectedContestStatus] }; applyContestBanner(contestStatusCache); }
+    } catch(e) { showToast('儲存失敗'); }
+}
+
+// ── 頒獎管理 ──
+async function loadGiftData() {
+    try {
+        const res = await apiCall('getGiftData');
+        if (!res.success || (res.data && res.data.error)) {
+            document.getElementById('award-content').innerHTML = '<p style="text-align:center;color:red;padding:20px;">無法取得資料</p>';
+            return;
+        }
+        giftDataCache = res.data;
+        renderAwardContent('referrals');
+    } catch(e) {
+        document.getElementById('award-content').innerHTML = '<p style="text-align:center;color:red;padding:20px;">連線失敗</p>';
+    }
+}
+
+function renderAwardContent(subTab) {
+    if (!giftDataCache) return;
+    const gifts = giftDataCache.gifts;
+    const groupedReferrals = giftDataCache.groupedReferrals;
+    const subTabs = ['referrals', 'unawarded', 'gifts'];
+    const subLabels = ['推薦領獎', '未領獎', '禮物設定'];
+    let html = '<div class="sub-tab-bar" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">';
+    subTabs.forEach(function(t, i) {
+        html += '<div class="sub-tab ' + (subTab === t ? 'active' : '') + '" onclick="renderAwardContent(\'' + t + '\')">' + subLabels[i] + '</div>';
+    });
+    html += '</div>';
+
+    if (subTab === 'referrals') {
+        if (!groupedReferrals || groupedReferrals.length === 0) {
+            html += '<p style="text-align:center;color:#999;padding:20px;">尚無推薦紀錄</p>';
+        } else {
+            groupedReferrals.forEach(function(g) {
+                html += '<div class="group-frame"><div class="group-header">' + g.groupName + ' 小組</div>';
+                g.influencers.forEach(function(inv) {
+                    html += '<div class="award-inv-block"><div class="award-inv-title">' + inv.invName + ' 推薦 ' + inv.recruits.length + ' 人</div>';
+                    inv.recruits.forEach(function(rec) {
+                        const ar = rec.awardRecord;
+                        let statusHtml = '', rowClass = 'status-none';
+                        if (ar) {
+                            if (ar.status === '已領取') { rowClass = 'status-claimed'; statusHtml = '<span class="award-status-claimed">✅ ' + ar.claimDate + ' 領取 ' + ar.giftName + '</span>'; }
+                            else { rowClass = 'status-pending'; statusHtml = '<span class="award-status-pending">⏳ 待領取（' + ar.registerDate + ' 登記）</span><button class="award-btn-green" onclick="openConfirmModal(' + ar.row + ',\'' + rec.tarName + '\')">確認已領取</button>'; }
+                        } else {
+                            statusHtml = '<span class="award-status-none">未登記</span><button class="award-btn-sm" onclick="openAwardModal(\'' + inv.invId + '\',\'' + rec.tarId + '\',\'' + rec.tarName + '\',\'' + inv.invName + '\')">登記禮物 ➔</button>';
+                        }
+                        html += '<div class="award-recruit-row ' + (rec.points === 2 ? 'effective ' : '') + rowClass + '"><div class="award-recruit-name">' + rec.tarName + ' <span class="tag ' + (rec.points === 2 ? 'tag-green' : 'tag-plus1') + '" style="margin-left:6px;">' + (rec.points === 2 ? '有效推薦' : '一般推薦') + '</span></div><div class="award-status-row">' + statusHtml + '</div></div>';
+                    });
+                    html += '</div>';
+                });
+                html += '</div>';
+            });
+        }
+    } else if (subTab === 'unawarded') {
+        let totalUnawarded = 0;
+        if (groupedReferrals && groupedReferrals.length > 0) {
+            groupedReferrals.forEach(function(g) {
+                const unawardedInGroup = [];
+                g.influencers.forEach(function(inv) {
+                    inv.recruits.forEach(function(rec) {
+                        if (!rec.awardRecord) unawardedInGroup.push(Object.assign({}, rec, { invId: inv.invId, invName: inv.invName }));
+                    });
+                });
+                if (unawardedInGroup.length === 0) return;
+                totalUnawarded += unawardedInGroup.length;
+                html += '<div class="group-frame"><div class="group-header" style="border-left-color:#FF8F00;color:#FF8F00;">' + g.groupName + ' 小組（' + unawardedInGroup.length + ' 人未領）</div>';
+                unawardedInGroup.forEach(function(rec) {
+                    html += '<div class="card"><div><b>' + rec.tarName + '</b><span class="tag ' + (rec.points === 2 ? 'tag-green' : 'tag-plus1') + '" style="margin-left:6px;">' + (rec.points === 2 ? '有效推薦' : '一般推薦') + '</span><br><small style="color:#999;">推薦人：' + rec.invName + '</small></div><button class="award-btn-sm" onclick="openAwardModal(\'' + rec.invId + '\',\'' + rec.tarId + '\',\'' + rec.tarName + '\',\'' + rec.invName + '\')">登記 ➔</button></div>';
+                });
+                html += '</div>';
+            });
+        }
+        if (totalUnawarded === 0) html += '<p style="text-align:center;color:#2E7D32;padding:20px;font-weight:bold;">🎉 所有人都已登記禮物！</p>';
+    } else if (subTab === 'gifts') {
+        const classroom = giftDataCache.myClassroom || '';
+        html += '<div class="group-frame"><div class="group-header">新增禮物</div><div style="font-size:12px;color:var(--accent);font-weight:bold;margin-bottom:10px;">教室：' + classroom + '</div><label>禮物名稱</label><input type="text" id="new-gift-name" placeholder="例如：AirPods Pro"><label>數量（0 代表無限制）</label><input type="number" id="new-gift-total" placeholder="0"><label>備註（選填）</label><input type="text" id="new-gift-note"><button class="btn" onclick="addGift()">新增禮物</button></div>';
+        html += '<div class="group-frame"><div class="group-header">目前禮物清單（' + classroom + '）</div>';
+        if (!gifts || gifts.length === 0) {
+            html += '<p style="text-align:center;color:#999;padding:10px;">尚無禮物</p>';
+        } else {
+            gifts.forEach(function(g) {
+                const pct = g.total > 0 ? Math.round((g.used / g.total) * 100) : 0;
+                html += '<div class="card" style="flex-direction:column;align-items:flex-start;"><div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:8px;"><span style="font-weight:bold;">🎁 ' + g.name + '</span><button type="button" onclick="deleteGift(\'' + g.name + '\')" style="background:none;border:none;color:#D32F2F;font-size:13px;font-weight:bold;cursor:pointer;">刪除</button></div>';
+                if (g.total > 0) { html += '<div style="width:100%;background:#F0F0F0;border-radius:4px;height:6px;margin-bottom:6px;"><div style="width:' + pct + '%;background:' + (pct >= 100 ? '#D32F2F' : '#2E7D32') + ';height:6px;border-radius:4px;"></div></div><div style="font-size:12px;color:#999;">已發 ' + g.used + ' / 共 ' + g.total + '（剩 ' + g.remaining + '）</div>'; }
+                else { html += '<div style="font-size:12px;color:#999;">已發 ' + g.used + '（無數量限制）</div>'; }
+                if (g.note) html += '<div style="font-size:11px;color:#BBB;margin-top:2px;">' + g.note + '</div>';
+                html += '</div>';
+            });
+        }
+        html += '</div>';
+    }
+    document.getElementById('award-content').innerHTML = html;
+}
+
+function buildGiftOptions() {
+    if (!giftDataCache || !giftDataCache.gifts) return '';
+    return giftDataCache.gifts.map(function(g) {
+        const disabled = g.remaining === 0 ? 'disabled' : '';
+        const label = g.remaining === 0 ? g.name + '（已額滿）' : g.name + '（剩 ' + g.remaining + '）';
+        return '<option value="' + g.name + '" ' + disabled + '>' + label + '</option>';
+    }).join('');
+}
+
+function openAwardModal(invId, tarId, tarName, invName) {
+    if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) { showToast('請先在「禮物設定」新增禮物'); return; }
+    modalPayload = { invId: invId, tarId: tarId, tarName: tarName };
+    document.getElementById('modal-tar-name').innerText = '登記禮物：' + tarName;
+    document.getElementById('modal-inv-name').innerText = '推薦人：' + invName;
+    document.getElementById('modal-gift').innerHTML = buildGiftOptions();
+    document.getElementById('modal-claimDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modal-note').value = '';
+    document.getElementById('modal-status').value = '已領取';
+    document.getElementById('modal-gift-section').style.display = 'block';
+    document.getElementById('award-modal').style.display = 'flex';
+}
+function closeAwardModal() { document.getElementById('award-modal').style.display = 'none'; }
+function toggleModalGiftSection() { document.getElementById('modal-gift-section').style.display = document.getElementById('modal-status').value === '已領取' ? 'block' : 'none'; }
+async function submitAwardModal() {
+    const status = document.getElementById('modal-status').value;
+    const giftName = status === '已領取' ? document.getElementById('modal-gift').value : '';
+    const claimDate = status === '已領取' ? document.getElementById('modal-claimDate').value : '';
+    const note = document.getElementById('modal-note').value;
+    if (status === '已領取' && !giftName) { showToast('請選擇禮物'); return; }
+    try {
+        const res = await apiCall('assignGift', { invId: modalPayload.invId, tarId: modalPayload.tarId, tarName: modalPayload.tarName, giftName: giftName, status: status, claimDate: claimDate, note: note, classroom: giftDataCache.myClassroom || '' });
+        showToast(res.message);
+        if (res.success) { closeAwardModal(); giftDataCache = null; await loadGiftData(); }
+    } catch(e) { showToast('連線失敗'); }
+}
+
+function openConfirmModal(row, tarName) {
+    if (!giftDataCache || !giftDataCache.gifts || giftDataCache.gifts.length === 0) { showToast('請先在「禮物設定」新增禮物'); return; }
+    confirmPayload = { row: row };
+    document.getElementById('confirm-tar-name').innerText = '確認領取：' + tarName;
+    document.getElementById('confirm-gift').innerHTML = buildGiftOptions();
+    document.getElementById('confirm-claimDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('confirm-modal').style.display = 'flex';
+}
+function closeConfirmModal() { document.getElementById('confirm-modal').style.display = 'none'; }
+async function submitConfirmModal() {
+    const giftName = document.getElementById('confirm-gift').value;
+    const claimDate = document.getElementById('confirm-claimDate').value;
+    if (!giftName) { showToast('請選擇禮物'); return; }
+    try {
+        const res = await apiCall('confirmGift', { row: confirmPayload.row, giftName: giftName, claimDate: claimDate, classroom: giftDataCache.myClassroom || '' });
+        showToast(res.message);
+        if (res.success) { closeConfirmModal(); giftDataCache = null; await loadGiftData(); }
+    } catch(e) { showToast('連線失敗'); }
+}
+async function addGift() {
+    const name = document.getElementById('new-gift-name').value.trim();
+    const total = document.getElementById('new-gift-total').value;
+    const note = document.getElementById('new-gift-note').value.trim();
+    if (!name) { showToast('請填寫禮物名稱'); return; }
+    try {
+        const res = await apiCall('addGift', { name: name, total: total, note: note, classroom: giftDataCache.myClassroom || '' });
+        showToast(res.message);
+        if (res.success) { giftDataCache = null; await loadGiftData(); }
+    } catch(e) { showToast('連線失敗'); }
+}
+async function deleteGift(name) {
+    if (!confirm('確定刪除「' + name + '」？')) return;
+    try {
+        const res = await apiCall('deleteGift', { name: name, classroom: giftDataCache.myClassroom || '' });
+        showToast(res.message);
+        if (res.success) { giftDataCache = null; await loadGiftData(); }
+    } catch(e) { showToast('連線失敗'); }
+}
+
+// ── 報名審核 ──
+async function approveRegister(amId, name) {
+    if (!confirm('確認「' + name + '」的報名？')) return;
+    try {
+        const res = await apiCall('approveRegister', { amId: amId, name: name });
+        showToast(res.message);
+        if (res.success) setTimeout(function() { loadAdmin(); }, 800);
+    } catch(e) { showToast('操作失敗'); }
+}
+async function rejectRegister(amId, name) {
+    if (!confirm('確定退回「' + name + '」的報名？')) return;
+    try {
+        const res = await apiCall('rejectRegister', { amId: amId, name: name });
+        showToast(res.message);
+        if (res.success) setTimeout(function() { loadAdmin(); }, 800);
+    } catch(e) { showToast('操作失敗'); }
+}
+
+// ── 報名頁面 ──
+function openRegisterPage() {
+    document.getElementById('register-page').style.display = 'block';
+    const groupListData = window._groupList || [];
+    ['self-group', 'proxy-group'].forEach(function(id) {
+        const sel = document.getElementById(id);
+        if (sel && groupListData.length > 0) {
+            sel.innerHTML = '<option value="">請選擇雁群</option>' + groupListData.map(function(g) { return '<option value="' + g + '">' + g + '</option>'; }).join('');
+        }
+    });
+}
+function closeRegisterPage() {
+    document.getElementById('register-page').style.display = 'none';
+    window.location.hash = '';
+}
+async function submitSelfRegister() {
+    const amId = document.getElementById('self-amId').value.trim();
+    const name = document.getElementById('self-name').value.trim();
+    const group = document.getElementById('self-group').value;
+    if (!amId || !name || !group) { showToast('請填寫完整資料'); return; }
+    try {
+        const res = await apiCall('submitRegister', { uid: state.uid, amId: amId, name: name, group: group });
+        showToast(res.message);
+        if (res.success) { document.getElementById('self-reg-form').style.display = 'none'; document.getElementById('self-reg-success').style.display = 'block'; }
+    } catch(e) { showToast('提交失敗'); }
+}
+async function submitProxyRegister() {
+    const amId = document.getElementById('proxy-amId').value.trim();
+    const name = document.getElementById('proxy-name').value.trim();
+    const group = document.getElementById('proxy-group').value;
+    if (!amId || !name || !group) { showToast('請填寫完整資料'); return; }
+    try {
+        const res = await apiCall('submitRegister', { uid: '', amId: amId, name: name, group: group });
+        showToast(res.message);
+        if (res.success) { document.getElementById('proxy-reg-form').style.display = 'none'; document.getElementById('proxy-reg-success').style.display = 'block'; }
+    } catch(e) { showToast('提交失敗'); }
+}
+
+// ── 初始化 ──
+window.onload = function() {
+    setupImageInput('tarImg', 'tarImg-preview', 'ref');
+    setupImageInput('cImg', 'cImg-preview', 'cons');
+    const isDev = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+    const goToHash = function() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash === 'register') { openRegisterPage(); return; }
+        if (hash && ['ref', 'cons', 'group', 'adm'].includes(hash)) switchTab(hash);
+    };
+    if (isDev) {
+        state.uid = 'Uc374b29901f192ad5e8e0daf604bd238';
+        refreshData().then(goToHash);
+    } else {
+        liff.init({ liffId: '2009757582-16dFzRuc' }).then(function() {
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                liff.getProfile().then(function(p) {
+                    state.uid = p.userId;
+                    refreshData().then(goToHash);
+                }).catch(function(err) {
+                    console.error('getProfile error:', err);
+                    document.getElementById('loading').style.display = 'none';
+                    showToast('無法取得 LINE 身分，請重新開啟');
+                });
+            }
+        }).catch(function(err) {
+            console.error('liff.init error:', err);
+            document.getElementById('loading').style.display = 'none';
+            showToast('LIFF 初始化失敗：' + err.toString());
+        });
+    }
+};
 </script>
 </body>
 </html>
