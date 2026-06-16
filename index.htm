@@ -841,8 +841,16 @@
         else {
             liff.init({ liffId: '2009757582-16dFzRuc' }).then(() => {
                 if (!liff.isLoggedIn()) liff.login();
-                else liff.getProfile().then(p => { state.uid = p.userId; refreshData().then(goToHash); });
-            }).catch(err => console.error(err));
+                else liff.getProfile().then(p => { state.uid = p.userId; refreshData().then(goToHash); }).catch(err => {
+                    console.error("getProfile error:", err);
+                    document.getElementById('loading').style.display = 'none';
+                    showToast("無法取得 LINE 身分，請重新開啟");
+                });
+            }).catch(err => {
+                console.error("liff.init error:", err);
+                document.getElementById('loading').style.display = 'none';
+                showToast("LIFF 初始化失敗：" + err.toString());
+            });
         }
     };
 
