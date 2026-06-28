@@ -293,7 +293,7 @@
 
 <script>
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
-let state = { uid: '', reviewerName: '' };
+let state = { uid: '', reviewerName: '', isPresident: false };
 let adminDataCache = null;
 let giftDataCache = null;
 let modalPayload = {};
@@ -510,6 +510,7 @@ async function refreshData() {
 
             document.getElementById('group-perf-list').innerHTML = groupHtml || '<p style="text-align:center;color:#999;padding:30px;">目前無資料</p>';
 
+            state.isPresident = d.isPresident || false;
             if (d.isPresident) {
                 document.getElementById('t-adm').style.display = 'block';
                 state.reviewerName = d.myProfile.name || '會長';
@@ -537,6 +538,8 @@ async function handleIdentity(action) {
 }
 
 function switchTab(id) {
+    // 非會長不能進會長專區
+    if (id === 'adm' && !state.isPresident) { showToast('您沒有權限進入會長專區'); return; }
     document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none'; });
     const targetPage = document.getElementById(id);
     if (targetPage) targetPage.style.display = 'block';
@@ -1141,6 +1144,7 @@ window.onload = function() {
     const goToHash = function() {
         const hash = window.location.hash.replace('#', '');
         if (hash === 'register') { openRegisterPage(); return; }
+        if (hash === 'adm' && !state.isPresident) { window.location.hash = ''; return; }
         if (hash && ['ref', 'cons', 'group', 'adm'].includes(hash)) switchTab(hash);
     };
     if (isDev) {
