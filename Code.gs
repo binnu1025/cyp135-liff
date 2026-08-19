@@ -1,7 +1,7 @@
 // ==========================================
 // 1. 核心設定區
 // ==========================================
-const APP_VERSION = '2.01';
+const APP_VERSION = '2.02';
 const CHANNEL_ACCESS_TOKEN = 'J0kKhBXygzwYubPguLX7yObD2nX2/V5CgTCmsHYlr9fLWhHouO4PAJHUTRoMgR40w9qPcAdWvnt3l4vo5cWd9n22uj48ZX9lFWeNCNw/bSqkx3ruVqOdDo6xTCH0Ivxmd68tyGo1ReJhz8RLwbo5CQdB04t89/1O/w1cDnyilFU=';
 const SPREADSHEET_ID = '1U7F0L6WvZuF-71UfWQltoCrKXfgAtyocZmOOWCe68jc';
 const DRIVE_FOLDER_ID = '1zNJvKi7uknsSG1eW2NYu8XX9R-0DZHBh';
@@ -136,6 +136,7 @@ function handleLineEvent(event) {
 function apiGetInitData(uid) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const uidStr = String(uid).trim();
+  const effAmt = getEffectiveAmount(ss);
 
   const permSheet   = ss.getSheetByName('LINE權限表');
   const rosterSheet = ss.getSheetByName('雁群總名冊');
@@ -220,7 +221,7 @@ function apiGetInitData(uid) {
       const rec = invRef.recruits[tarId];
       const oldSpent = rec.spent;
       rec.spent += amt;
-      if (oldSpent < 3000 && rec.spent >= 3000) { rec.effDate = dateStr; rec.points = 2; }
+      if (oldSpent < effAmt && rec.spent >= effAmt) { rec.effDate = dateStr; rec.points = 2; }
     });
   }
 
@@ -242,7 +243,7 @@ function apiGetInitData(uid) {
 
   Object.values(groupPerfMap).forEach(g => {
     Object.values(g).forEach(inv => {
-      Object.values(inv.recruits).forEach(r => newbiesForCons.push({ ...r, isReached: r.spent >= 3000 }));
+      Object.values(inv.recruits).forEach(r => newbiesForCons.push({ ...r, isReached: r.spent >= effAmt }));
     });
   });
   newbiesForCons.sort((a, b) => (a.isReached === b.isReached) ? 0 : a.isReached ? 1 : -1);
@@ -274,7 +275,7 @@ function apiGetInitData(uid) {
   return {
     myProfile: { id: myAmId || "", group: myGroup || "", name: displayProfileName, classroom: myClassroom },
     participants, newbies: newbiesForCons, groupPerf, groupMembers, isPresident, groupList,
-    contestStatus, version: APP_VERSION
+    contestStatus, version: APP_VERSION, effectiveAmount: effAmt
   };
 }
 
@@ -421,13 +422,18 @@ function apiGetContestStatus() {
       settingSheet = ss.insertSheet('系統設定');
       settingSheet.appendRow(['contest_status', 'active']);
       settingSheet.appendRow(['contest_label', '競賽進行中']);
+      settingSheet.appendRow(['effective_amount', 3000]);
     }
     const data = settingSheet.getDataRange().getValues();
     let status = 'active', label = '競賽進行中';
+    let hasEffAmt = false;
     data.forEach(row => {
-      if (String(row[0]).trim() === 'contest_status') status = String(row[1]).trim();
-      if (String(row[0]).trim() === 'contest_label')  label  = String(row[1]).trim();
+      if (String(row[0]).trim() === 'contest_status')   status = String(row[1]).trim();
+      if (String(row[0]).trim() === 'contest_label')    label  = String(row[1]).trim();
+      if (String(row[0]).trim() === 'effective_amount') hasEffAmt = true;
     });
+    // 舊的試算表沒有這一列，補上讓使用者看得到、改得到（只會發生一次）
+    if (!hasEffAmt) settingSheet.appendRow(['effective_amount', 3000]);
     return { status, label };
   } catch(e) {
     return { status: 'active', label: '競賽進行中' };
@@ -469,6 +475,7 @@ function apiSetContestStatus(p) {
 function apiGetAdminDashboard(uid) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const uidStr = String(uid || "").trim();
+  const effAmt = getEffectiveAmount(ss);
 
   // 權限檢查：前端只是隱藏分頁，這裡才是真的把關
   const auth = getPresidentInfo(uidStr, ss);
@@ -577,7 +584,7 @@ function apiGetAdminDashboard(uid) {
     const rec = recruitMap[key];
     const oldSpent = rec.spent;
     rec.spent += amt;
-    if (oldSpent < 3000 && rec.spent >= 3000) {
+    if (oldSpent < effAmt && rec.spent >= effAmt) {
       rec.points = 2;
       rec.effDate = Utilities.formatDate(new Date(row[8] || row[0]), "GMT+8", "MM/dd");
       totalEffective++;
@@ -689,6 +696,7 @@ function apiProcessReview(p, status) {
 function apiGetGiftData(uid) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const uidStr = String(uid || "").trim();
+  const effAmt = getEffectiveAmount(ss);
 
   const permSheet = ss.getSheetByName('LINE權限表');
   const permData  = permSheet.getDataRange().getValues();
@@ -772,7 +780,7 @@ function apiGetGiftData(uid) {
     const rec = groupMap[gName][invId].recruits[tarId];
     const oldSpent = rec.spent;
     rec.spent += amt;
-    if (oldSpent < 3000 && rec.spent >= 3000) rec.points = 2;
+    if (oldSpent < effAmt && rec.spent >= effAmt) rec.points = 2;
   });
 
   const groupedReferrals = Object.entries(groupMap).map(([gName, invs]) => {
@@ -983,6 +991,25 @@ function getPresidentInfo(uid, ss) {
     }
   } catch(e) {}
   return result;
+}
+
+// 有效推薦的消費門檻。在「系統設定」分頁用 effective_amount 這個鍵調整，
+// 例如 A 欄填 effective_amount、B 欄填 5000。讀不到或填了無效值時退回 3000。
+function getEffectiveAmount(ss) {
+  try {
+    const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+    const settingSheet = book.getSheetByName('系統設定');
+    if (!settingSheet) return 3000;
+    const data = settingSheet.getDataRange().getValues();
+    for (let i = 0; i < data.length; i++) {
+      if (String(data[i][0]).trim() === 'effective_amount') {
+        // 容許使用者填成 "5,000" 或 "$5000"
+        const v = Number(String(data[i][1]).replace(/[^0-9.]/g, ''));
+        if (v > 0) return v;
+      }
+    }
+  } catch(e) {}
+  return 3000;
 }
 
 // 這個 LINE UID 是否已完成身分認領（綁定名冊），或列在權限表中。
