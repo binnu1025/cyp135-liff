@@ -565,7 +565,12 @@ async function loadAdmin() {
     cont.innerHTML = '<p style="text-align:center;padding:20px;color:#999;">載入中...</p>';
     try {
         const res = await apiCall('getAdminDashboard');
-        adminDataCache = res.data ? res.data : res;
+        const data = res.data ? res.data : res;
+        if (!data || data.error) {
+            cont.innerHTML = '<p style="text-align:center;padding:30px;color:#D32F2F;">' + ((data && data.error) || '無法取得資料') + '</p>';
+            return;
+        }
+        adminDataCache = data;
         renderAdminTab('regApprove');
     } catch(e) { cont.innerHTML = '<p style="text-align:center;padding:30px;color:red;">連線失敗</p>'; }
 }
@@ -614,7 +619,7 @@ function renderAdminTab(tabName) {
                             html += '<button type="button" class="btn" style="background:#F0F0F0;color:#000;margin-bottom:8px;padding:10px;height:auto;" onclick="viewImage(\'' + url.trim() + '\')">📸 查看憑證' + (r.img.split(',').length > 1 ? ' ' + (i + 1) : '') + '</button>';
                         });
                     }
-                    html += '<div style="display:flex;gap:10px;"><button class="btn" style="flex:1;background:#000;margin:0;" onclick="processReview(' + r.row + ',\'approve\')">核准</button><button class="btn" style="flex:1;background:#666;margin:0;" onclick="processReview(' + r.row + ',\'reject\')">退回</button></div></div>';
+                    html += '<div style="display:flex;gap:10px;"><button class="btn" style="flex:1;background:#000;margin:0;" onclick="processReview(' + r.row + ',\'approve\',this)">核准</button><button class="btn" style="flex:1;background:#666;margin:0;" onclick="processReview(' + r.row + ',\'reject\',this)">退回</button></div></div>';
                 });
                 html += '</div>';
             });
@@ -727,13 +732,22 @@ function toggleMemberPanel(id, btn) {
     btn.querySelector('span:last-child').textContent = el.classList.contains('open') ? '▲' : '▼';
 }
 
-async function processReview(row, action) {
+async function processReview(row, action, btnEl) {
     if (!confirm('確定執行此操作？')) return;
+    // 先鎖住這組按鈕，避免連點造成重複核准
+    const siblings = btnEl && btnEl.parentElement ? btnEl.parentElement.querySelectorAll('button') : [];
+    const originalTexts = [];
+    siblings.forEach(function(b, i) { originalTexts[i] = b.innerText; b.disabled = true; });
+    if (btnEl) btnEl.innerText = '處理中...';
     try {
-        const res = await apiCall(action, { row: row, reviewerName: state.reviewerName });
+        const res = await apiCall(action, { uid: state.uid, row: row, reviewerName: state.reviewerName });
         showToast(res.message);
+        // 不論成功或失敗都重新載入：失敗多半是「已被處理過」，重整才看得到最新狀態
         setTimeout(function() { loadAdmin(); refreshData(); }, 1000);
-    } catch(e) { showToast('操作失敗'); }
+    } catch(e) {
+        showToast('操作失敗');
+        siblings.forEach(function(b, i) { b.disabled = false; b.innerText = originalTexts[i]; });
+    }
 }
 
 async function checkTarId() {
@@ -795,7 +809,7 @@ async function saveContestStatus() {
     if (!selectedContestStatus) { showToast('請先選擇狀態'); return; }
     const labelMap = { pending: '尚未開始', active: '競賽進行中', closed: '競賽已截止' };
     try {
-        const res = await apiCall('setContestStatus', { status: selectedContestStatus, label: labelMap[selectedContestStatus] });
+        const res = await apiCall('setContestStatus', { uid: state.uid, status: selectedContestStatus, label: labelMap[selectedContestStatus] });
         showToast(res.message);
         if (res.success) { contestStatusCache = { status: selectedContestStatus, label: labelMap[selectedContestStatus] }; applyContestBanner(contestStatusCache); }
     } catch(e) { showToast('儲存失敗'); }
@@ -923,7 +937,7 @@ async function submitAwardModal() {
     const note = document.getElementById('modal-note').value;
     if (status === '已領取' && !giftName) { showToast('請選擇禮物'); return; }
     try {
-        const res = await apiCall('assignGift', { invId: modalPayload.invId, tarId: modalPayload.tarId, tarName: modalPayload.tarName, giftName: giftName, status: status, claimDate: claimDate, note: note, classroom: giftDataCache.myClassroom || '' });
+        const res = await apiCall('assignGift', { uid: state.uid, invId: modalPayload.invId, tarId: modalPayload.tarId, tarName: modalPayload.tarName, giftName: giftName, status: status, claimDate: claimDate, note: note, classroom: giftDataCache.myClassroom || '' });
         showToast(res.message);
         if (res.success) { closeAwardModal(); giftDataCache = null; await loadGiftData(); }
     } catch(e) { showToast('連線失敗'); }
@@ -943,7 +957,7 @@ async function submitConfirmModal() {
     const claimDate = document.getElementById('confirm-claimDate').value;
     if (!giftName) { showToast('請選擇禮物'); return; }
     try {
-        const res = await apiCall('confirmGift', { row: confirmPayload.row, giftName: giftName, claimDate: claimDate, classroom: giftDataCache.myClassroom || '' });
+        const res = await apiCall('confirmGift', { uid: state.uid, row: confirmPayload.row, giftName: giftName, claimDate: claimDate, classroom: giftDataCache.myClassroom || '' });
         showToast(res.message);
         if (res.success) { closeConfirmModal(); giftDataCache = null; await loadGiftData(); }
     } catch(e) { showToast('連線失敗'); }
@@ -954,7 +968,7 @@ async function addGift() {
     const note = document.getElementById('new-gift-note').value.trim();
     if (!name) { showToast('請填寫禮物名稱'); return; }
     try {
-        const res = await apiCall('addGift', { name: name, total: total, note: note, classroom: giftDataCache.myClassroom || '' });
+        const res = await apiCall('addGift', { uid: state.uid, name: name, total: total, note: note, classroom: giftDataCache.myClassroom || '' });
         showToast(res.message);
         if (res.success) { giftDataCache = null; await loadGiftData(); }
     } catch(e) { showToast('連線失敗'); }
@@ -962,7 +976,7 @@ async function addGift() {
 async function deleteGift(name) {
     if (!confirm('確定刪除「' + name + '」？')) return;
     try {
-        const res = await apiCall('deleteGift', { name: name, classroom: giftDataCache.myClassroom || '' });
+        const res = await apiCall('deleteGift', { uid: state.uid, name: name, classroom: giftDataCache.myClassroom || '' });
         showToast(res.message);
         if (res.success) { giftDataCache = null; await loadGiftData(); }
     } catch(e) { showToast('連線失敗'); }
@@ -973,7 +987,7 @@ async function approveRegister(amId, name, btnEl) {
     if (!confirm('確認「' + name + '」的報名？')) return;
     if (btnEl) { btnEl.disabled = true; btnEl.innerText = '處理中...'; }
     try {
-        const res = await apiCall('approveRegister', { amId: amId, name: name });
+        const res = await apiCall('approveRegister', { uid: state.uid, amId: amId, name: name });
         showToast(res.message);
         if (res.success) {
             // 直接移除這筆，不重整頁面
@@ -1002,7 +1016,7 @@ async function rejectRegister(amId, name, btnEl) {
     if (!confirm('確定退回「' + name + '」的報名？')) return;
     if (btnEl) { btnEl.disabled = true; btnEl.innerText = '處理中...'; }
     try {
-        const res = await apiCall('rejectRegister', { amId: amId, name: name });
+        const res = await apiCall('rejectRegister', { uid: state.uid, amId: amId, name: name });
         showToast(res.message);
         if (res.success) {
             const item = btnEl ? btnEl.closest('.reg-pending-item') : null;

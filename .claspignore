@@ -1,0 +1,8 @@
+# index.html 是前端頁面，不屬於 GAS 專案（doGet 只回 JSON）
+index.html
+
+# 版控與工具產出
+.git/**
+.gitignore
+node_modules/**
+*.md
