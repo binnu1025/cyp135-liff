@@ -289,11 +289,16 @@
         <h2 style="margin-top:0;">會長專區</h2>
         <div id="admin-content"></div>
     </div>
+
+    <!-- 版本標示：前後端版本不一致代表有一邊沒部署成功 -->
+    <div id="app-version" style="text-align:center;color:#BBB;font-size:11px;padding:24px 0 8px;"></div>
 </div>
 
 <script>
+const APP_VERSION = '2.01';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyxa8Zbw9EkZRfp-XWcdWRp_xMoBUeSVSIvHBKdW6WMSjd2C40faKjv_iiB58OBumtB/exec';
-let state = { uid: '', reviewerName: '', isPresident: false };
+// registered：是否已完成身分認領。false 時一律只能停在認領頁
+let state = { uid: '', reviewerName: '', isPresident: false, registered: false };
 let adminDataCache = null;
 let giftDataCache = null;
 let modalPayload = {};
@@ -402,18 +407,31 @@ function applyContestBanner(contestStatus) {
     });
 }
 
+// 身分關卡：把畫面鎖死在認領頁，其他任何頁面都不給進
+function showIdentityGate() {
+    state.registered = false;
+    document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none'; });
+    document.getElementById('reg-page').style.display = 'block';
+    document.getElementById('main-tabs').style.display = 'none';
+    document.getElementById('register-page').style.display = 'none';
+    if (window.location.hash) window.location.hash = '';
+}
+
 // ── 主資料載入 ──
 async function refreshData() {
     try {
         const res = await apiCall('getInitData');
         if (res.data && res.data.error === '未註冊') {
-            document.getElementById('reg-page').style.display = 'block';
-            document.getElementById('ref').style.display = 'none';
-            document.getElementById('main-tabs').style.display = 'none';
+            showIdentityGate();
             return;
         }
         if (res.data) {
+            state.registered = true;
             const d = res.data;
+            if (d.version) {
+                const vEl = document.getElementById('app-version');
+                if (vEl) vEl.innerText = 'v' + APP_VERSION + '　後端 v' + d.version;
+            }
             document.getElementById('reg-page').style.display = 'none';
             document.getElementById('main-tabs').style.display = 'flex';
             applyContestBanner(d.contestStatus);
@@ -515,10 +533,16 @@ async function refreshData() {
                 document.getElementById('t-adm').style.display = 'block';
                 state.reviewerName = d.myProfile.name || '會長';
             }
+        } else {
+            // 後端回了非預期內容（例如例外訊息）。一律鎖回認領頁，
+            // 絕不讓使用者停在一張沒有資料的空表單上
+            showIdentityGate();
+            showToast(res.message || '無法取得資料，請重新開啟');
         }
     } catch(e) {
         console.error('Refresh Error:', e);
-        showToast('數據載入異常，請重整');
+        showIdentityGate();
+        showToast('數據載入異常，請重新開啟');
     } finally {
         document.getElementById('loading').style.display = 'none';
     }
@@ -538,6 +562,8 @@ async function handleIdentity(action) {
 }
 
 function switchTab(id) {
+    // 未完成認領不得離開認領頁（含網址 hash 觸發的切換）
+    if (!state.registered) { showIdentityGate(); showToast('請先完成身分認領'); return; }
     // 非會長不能進會長專區
     if (id === 'adm' && !state.isPresident) { showToast('您沒有權限進入會長專區'); return; }
     document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none'; });
@@ -1152,12 +1178,16 @@ async function submitProxyRegister() {
 
 // ── 初始化 ──
 window.onload = function() {
+    document.getElementById('app-version').innerText = 'v' + APP_VERSION;
     setupImageInput('tarImg', 'tarImg-preview', 'ref');
     setupImageInput('cImg', 'cImg-preview', 'cons');
     const isDev = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
     const goToHash = function() {
         const hash = window.location.hash.replace('#', '');
+        // 報名頁一律開放（未報名的人本來就要走這裡）
         if (hash === 'register') { openRegisterPage(); return; }
+        // 未完成認領時，任何 hash 都不得繞過認領頁
+        if (!state.registered) { window.location.hash = ''; return; }
         if (hash === 'adm' && !state.isPresident) { window.location.hash = ''; return; }
         if (hash && ['ref', 'cons', 'group', 'adm'].includes(hash)) switchTab(hash);
     };

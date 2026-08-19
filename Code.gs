@@ -1,6 +1,7 @@
 // ==========================================
 // 1. 核心設定區
 // ==========================================
+const APP_VERSION = '2.01';
 const CHANNEL_ACCESS_TOKEN = 'J0kKhBXygzwYubPguLX7yObD2nX2/V5CgTCmsHYlr9fLWhHouO4PAJHUTRoMgR40w9qPcAdWvnt3l4vo5cWd9n22uj48ZX9lFWeNCNw/bSqkx3ruVqOdDo6xTCH0Ivxmd68tyGo1ReJhz8RLwbo5CQdB04t89/1O/w1cDnyilFU=';
 const SPREADSHEET_ID = '1U7F0L6WvZuF-71UfWQltoCrKXfgAtyocZmOOWCe68jc';
 const DRIVE_FOLDER_ID = '1zNJvKi7uknsSG1eW2NYu8XX9R-0DZHBh';
@@ -273,7 +274,7 @@ function apiGetInitData(uid) {
   return {
     myProfile: { id: myAmId || "", group: myGroup || "", name: displayProfileName, classroom: myClassroom },
     participants, newbies: newbiesForCons, groupPerf, groupMembers, isPresident, groupList,
-    contestStatus
+    contestStatus, version: APP_VERSION
   };
 }
 
@@ -302,6 +303,10 @@ function apiLinkIdentity(p) {
 
 function apiSubmitReferral(p) {
   try {
+    // 身分把關：未完成認領者一律不得提交
+    if (!isRegisteredUid(p && p.uid))
+      return { success: false, message: "請先完成身分認領後再提交。" };
+
     // 檢查競賽狀態
     const contestStatus = apiGetContestStatus();
     if (contestStatus.status !== 'active') {
@@ -959,7 +964,7 @@ function apiRejectRegister(p) {
 // 依 LINE UID 查權限表，回傳身分資訊。所有「寫入型」API 都要先過這關。
 // ss 可選：呼叫端已開啟試算表時傳進來，避免重複開檔。
 function getPresidentInfo(uid, ss) {
-  const result = { isPresident: false, classroom: "", amId: "" };
+  const result = { found: false, isPresident: false, classroom: "", amId: "" };
   const uidStr = String(uid || "").trim();
   if (!uidStr) return result;
   try {
@@ -969,6 +974,7 @@ function getPresidentInfo(uid, ss) {
     const permData = permSheet.getDataRange().getValues();
     for (let i = 1; i < permData.length; i++) {
       if (String(permData[i][0]).trim() === uidStr) {
+        result.found       = true;
         result.isPresident = String(permData[i][3]).trim() === "會長";
         result.classroom   = String(permData[i][4] || "").trim();
         result.amId        = String(permData[i][1] || "").trim();
@@ -977,6 +983,25 @@ function getPresidentInfo(uid, ss) {
     }
   } catch(e) {}
   return result;
+}
+
+// 這個 LINE UID 是否已完成身分認領（綁定名冊），或列在權限表中。
+// 未通過的人不得提交任何資料 —— 前端關卡是體驗，這裡才是真正的門。
+function isRegisteredUid(uid, ss) {
+  const uidStr = String(uid || "").trim();
+  if (!uidStr) return false;
+  try {
+    const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+    const rosterSheet = book.getSheetByName('雁群總名冊');
+    if (rosterSheet && rosterSheet.getLastRow() > 1) {
+      const data = rosterSheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][0]).trim() === uidStr) return true;
+      }
+    }
+    // 管理者可能只在權限表、不在名冊
+    return getPresidentInfo(uidStr, book).found;
+  } catch(e) { return false; }
 }
 
 function getMapsFromData(rosterData) {
