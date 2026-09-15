@@ -1,7 +1,7 @@
 // ==========================================
 // 1. 核心設定區
 // ==========================================
-const APP_VERSION = '2.02';
+const APP_VERSION = '2.03';
 const CHANNEL_ACCESS_TOKEN = 'J0kKhBXygzwYubPguLX7yObD2nX2/V5CgTCmsHYlr9fLWhHouO4PAJHUTRoMgR40w9qPcAdWvnt3l4vo5cWd9n22uj48ZX9lFWeNCNw/bSqkx3ruVqOdDo6xTCH0Ivxmd68tyGo1ReJhz8RLwbo5CQdB04t89/1O/w1cDnyilFU=';
 const SPREADSHEET_ID = '1U7F0L6WvZuF-71UfWQltoCrKXfgAtyocZmOOWCe68jc';
 const DRIVE_FOLDER_ID = '1zNJvKi7uknsSG1eW2NYu8XX9R-0DZHBh';
@@ -136,7 +136,9 @@ function handleLineEvent(event) {
 function apiGetInitData(uid) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const uidStr = String(uid).trim();
-  const effAmt = getEffectiveAmount(ss);
+  // 系統設定只讀一次，門檻與競賽狀態共用（原本會各讀一次、且各自再開一次試算表）
+  const settings = getSettings(ss);
+  const effAmt = settings.effectiveAmount;
 
   const permSheet   = ss.getSheetByName('LINE權限表');
   const rosterSheet = ss.getSheetByName('雁群總名冊');
@@ -269,8 +271,8 @@ function apiGetInitData(uid) {
 
   const displayProfileName = myAmId ? (maps.amIdToName[myAmId] || "使用者") : "管理員";
 
-  // 取得競賽狀態
-  const contestStatus = apiGetContestStatus();
+  // 競賽狀態沿用上面那次讀取的結果，不再重開試算表
+  const contestStatus = { status: settings.status, label: settings.label };
 
   return {
     myProfile: { id: myAmId || "", group: myGroup || "", name: displayProfileName, classroom: myClassroom },
@@ -304,12 +306,15 @@ function apiLinkIdentity(p) {
 
 function apiSubmitReferral(p) {
   try {
+    // 整支只開一次試算表（原本身分檢查、競賽狀態、寫入各開一次）
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+
     // 身分把關：未完成認領者一律不得提交
-    if (!isRegisteredUid(p && p.uid))
+    if (!isRegisteredUid(p && p.uid, ss))
       return { success: false, message: "請先完成身分認領後再提交。" };
 
     // 檢查競賽狀態
-    const contestStatus = apiGetContestStatus();
+    const contestStatus = apiGetContestStatus(ss);
     if (contestStatus.status !== 'active') {
       const msg = contestStatus.status === 'pending' ? '競賽尚未開始，無法提交。' : '競賽已截止，無法提交。';
       return { success: false, message: msg };
@@ -329,7 +334,7 @@ function apiSubmitReferral(p) {
     });
     const imgUrlStr = imgUrls.join(',');
     const firstFileId = imgUrls.length > 0 ? imgUrls[0].replace("https://lh3.googleusercontent.com/d/", "") : "";
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('待審核清單');
+    const sheet = ss.getSheetByName('待審核清單');
     sheet.appendRow([new Date(), p.uid, p.invId, p.invName, p.tarId, p.tarName, p.date, Number(p.amt) || 0, "待審核", imgUrlStr, p.type, firstFileId]);
     return { success: true, message: "✨ 資料已提交。" };
   } catch(e) { return { success: false, message: "失敗：" + e.toString() }; }
@@ -413,31 +418,31 @@ function apiCheckMyRegistration(uid) {
 // 6. 競賽狀態管理
 // ==========================================
 
-function apiGetContestStatus() {
+// 一次把「系統設定」分頁讀完。純讀取、不寫入 —— 寫入放在讀取路徑上會拖慢每一次請求。
+// 呼叫端已開啟試算表時請把 ss 傳進來，省下一次 openById。
+function getSettings(ss) {
+  const out = { status: 'active', label: '競賽進行中', effectiveAmount: 3000 };
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    let settingSheet = ss.getSheetByName('系統設定');
-    if (!settingSheet) {
-      // 若分頁不存在，自動建立並預設為 active
-      settingSheet = ss.insertSheet('系統設定');
-      settingSheet.appendRow(['contest_status', 'active']);
-      settingSheet.appendRow(['contest_label', '競賽進行中']);
-      settingSheet.appendRow(['effective_amount', 3000]);
-    }
-    const data = settingSheet.getDataRange().getValues();
-    let status = 'active', label = '競賽進行中';
-    let hasEffAmt = false;
-    data.forEach(row => {
-      if (String(row[0]).trim() === 'contest_status')   status = String(row[1]).trim();
-      if (String(row[0]).trim() === 'contest_label')    label  = String(row[1]).trim();
-      if (String(row[0]).trim() === 'effective_amount') hasEffAmt = true;
+    const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = book.getSheetByName('系統設定');
+    if (!sheet) return out;
+    sheet.getDataRange().getValues().forEach(row => {
+      const key = String(row[0]).trim();
+      if (key === 'contest_status') { const v = String(row[1]).trim(); if (v) out.status = v; }
+      if (key === 'contest_label')  { const v = String(row[1]).trim(); if (v) out.label  = v; }
+      if (key === 'effective_amount') {
+        // 容許使用者填成 "5,000" 或 "$5000"
+        const v = Number(String(row[1]).replace(/[^0-9.]/g, ''));
+        if (v > 0) out.effectiveAmount = v;
+      }
     });
-    // 舊的試算表沒有這一列，補上讓使用者看得到、改得到（只會發生一次）
-    if (!hasEffAmt) settingSheet.appendRow(['effective_amount', 3000]);
-    return { status, label };
-  } catch(e) {
-    return { status: 'active', label: '競賽進行中' };
-  }
+  } catch(e) {}
+  return out;
+}
+
+function apiGetContestStatus(ss) {
+  const s = getSettings(ss);
+  return { status: s.status, label: s.label };
 }
 
 function apiSetContestStatus(p) {
@@ -996,20 +1001,7 @@ function getPresidentInfo(uid, ss) {
 // 有效推薦的消費門檻。在「系統設定」分頁用 effective_amount 這個鍵調整，
 // 例如 A 欄填 effective_amount、B 欄填 5000。讀不到或填了無效值時退回 3000。
 function getEffectiveAmount(ss) {
-  try {
-    const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
-    const settingSheet = book.getSheetByName('系統設定');
-    if (!settingSheet) return 3000;
-    const data = settingSheet.getDataRange().getValues();
-    for (let i = 0; i < data.length; i++) {
-      if (String(data[i][0]).trim() === 'effective_amount') {
-        // 容許使用者填成 "5,000" 或 "$5000"
-        const v = Number(String(data[i][1]).replace(/[^0-9.]/g, ''));
-        if (v > 0) return v;
-      }
-    }
-  } catch(e) {}
-  return 3000;
+  return getSettings(ss).effectiveAmount;
 }
 
 // 這個 LINE UID 是否已完成身分認領（綁定名冊），或列在權限表中。
