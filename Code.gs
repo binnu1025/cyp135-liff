@@ -1,7 +1,7 @@
 // ==========================================
 // 1. 核心設定區
 // ==========================================
-const APP_VERSION = '2.03';
+const APP_VERSION = '2.04';
 const CHANNEL_ACCESS_TOKEN = 'J0kKhBXygzwYubPguLX7yObD2nX2/V5CgTCmsHYlr9fLWhHouO4PAJHUTRoMgR40w9qPcAdWvnt3l4vo5cWd9n22uj48ZX9lFWeNCNw/bSqkx3ruVqOdDo6xTCH0Ivxmd68tyGo1ReJhz8RLwbo5CQdB04t89/1O/w1cDnyilFU=';
 const SPREADSHEET_ID = '1U7F0L6WvZuF-71UfWQltoCrKXfgAtyocZmOOWCe68jc';
 const DRIVE_FOLDER_ID = '1zNJvKi7uknsSG1eW2NYu8XX9R-0DZHBh';
@@ -145,8 +145,8 @@ function apiGetInitData(uid) {
   const groupSheet  = ss.getSheetByName('雁群清單');
   const totalSheet  = ss.getSheetByName('推薦總表');
 
-  const permData   = permSheet.getDataRange().getValues();
-  const rosterData = rosterSheet.getDataRange().getValues();
+  const permData   = readSheet(permSheet, 5);
+  const rosterData = readSheet(rosterSheet, 5);
 
   let authorizedGroups = [];
   let isPresident = false;
@@ -168,8 +168,9 @@ function apiGetInitData(uid) {
 
   let groupList = [];
   const groupToClassroom = {};
-  if (groupSheet.getLastRow() >= 2) {
-    const groupData = groupSheet.getRange(2, 1, groupSheet.getLastRow() - 1, 2).getValues();
+  const groupLastRow = groupSheet.getLastRow();   // 原本這裡呼叫了兩次，每次都是一趟往返
+  if (groupLastRow >= 2) {
+    const groupData = groupSheet.getRange(2, 1, groupLastRow - 1, 2).getValues();
     groupData.forEach(r => {
       const gName = String(r[0]).trim();
       const cName = String(r[1] || "").trim();
@@ -200,8 +201,7 @@ function apiGetInitData(uid) {
   const newbiesForCons = [];
 
   if (totalSheet && totalSheet.getLastRow() > 1) {
-    const allRecords = totalSheet.getDataRange().getValues().slice(1);
-    allRecords.sort((a, b) => new Date(a[0]) - new Date(b[0]));
+    const allRecords = sortByTime(readSheet(totalSheet, 9, true), 0);
 
     allRecords.forEach(row => {
       const rGroup = String(row[3]).trim();
@@ -344,15 +344,19 @@ function apiCheckTarId(tarId) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const tarIdStr = String(tarId).trim();
   const rosterSheet = ss.getSheetByName('雁群總名冊');
-  if (rosterSheet && rosterSheet.getLastRow() > 1) {
-    const roster = rosterSheet.getDataRange().getValues().slice(1);
-    if (roster.some(r => String(r[1]).trim() === tarIdStr))
+  const rosterLast = rosterSheet ? rosterSheet.getLastRow() : 0;
+  if (rosterLast > 1) {
+    // 只讀 B 欄（安麗編號）
+    const roster = rosterSheet.getRange(2, 2, rosterLast - 1, 1).getValues();
+    if (roster.some(r => String(r[0]).trim() === tarIdStr))
       return { exists: true, message: `⚠️ 編號 ${tarId} 已是報名者，請再次確認編號。` };
   }
   const totalSheet = ss.getSheetByName('推薦總表');
-  if (totalSheet && totalSheet.getLastRow() > 1) {
-    const records = totalSheet.getDataRange().getValues().slice(1);
-    if (records.some(r => String(r[4]).trim() === tarIdStr))
+  const totalLast = totalSheet ? totalSheet.getLastRow() : 0;
+  if (totalLast > 1) {
+    // 只讀 E 欄（新人編號）
+    const records = totalSheet.getRange(2, 5, totalLast - 1, 1).getValues();
+    if (records.some(r => String(r[0]).trim() === tarIdStr))
       return { exists: true, message: `⚠️ 編號 ${tarId} 已是被推薦者，請再次確認編號。` };
   }
   return { exists: false };
@@ -384,9 +388,10 @@ function apiCheckRegisterId(amId) {
     const amIdStr = String(amId || "").trim();
     if (!amIdStr) return { exists: false };
     const rosterSheet = ss.getSheetByName('雁群總名冊');
-    if (rosterSheet && rosterSheet.getLastRow() > 1) {
-      const roster = rosterSheet.getDataRange().getValues().slice(1);
-      if (roster.some(r => String(r[1]).trim() === amIdStr))
+    const rosterLast = rosterSheet ? rosterSheet.getLastRow() : 0;
+    if (rosterLast > 1) {
+      const roster = rosterSheet.getRange(2, 2, rosterLast - 1, 1).getValues();
+      if (roster.some(r => String(r[0]).trim() === amIdStr))
         return { exists: true, message: '⚠️ 此編號已在名冊中，請確認是否重複報名。' };
     }
     return { exists: false };
@@ -426,7 +431,7 @@ function getSettings(ss) {
     const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = book.getSheetByName('系統設定');
     if (!sheet) return out;
-    sheet.getDataRange().getValues().forEach(row => {
+    readSheet(sheet, 2).forEach(row => {
       const key = String(row[0]).trim();
       if (key === 'contest_status') { const v = String(row[1]).trim(); if (v) out.status = v; }
       if (key === 'contest_label')  { const v = String(row[1]).trim(); if (v) out.label  = v; }
@@ -491,9 +496,9 @@ function apiGetAdminDashboard(uid) {
   const pendingSheet = ss.getSheetByName('待審核清單');
   const totalSheet   = ss.getSheetByName('推薦總表');
 
-  const rosterData    = rosterSheet ? rosterSheet.getDataRange().getValues() : [];
-  const pendingValues = pendingSheet && pendingSheet.getLastRow() > 1 ? pendingSheet.getDataRange().getValues() : [];
-  const totalData     = totalSheet && totalSheet.getLastRow() > 1 ? totalSheet.getDataRange().getValues() : [];
+  const rosterData    = readSheet(rosterSheet, 5);
+  const pendingValues = readSheet(pendingSheet, 14);
+  const totalData     = readSheet(totalSheet, 9);
 
   // 取得審核者姓名
   const myClassroom = auth.classroom;
@@ -504,8 +509,9 @@ function apiGetAdminDashboard(uid) {
   }
 
   const groupToClassroom = {};
-  if (groupSheet && groupSheet.getLastRow() >= 2) {
-    groupSheet.getRange(2, 1, groupSheet.getLastRow() - 1, 2).getValues().forEach(r => {
+  const groupLastRow = groupSheet ? groupSheet.getLastRow() : 0;
+  if (groupLastRow >= 2) {
+    groupSheet.getRange(2, 1, groupLastRow - 1, 2).getValues().forEach(r => {
       const gName = String(r[0]).trim();
       const cName = String(r[1] || "").trim();
       if (gName && cName) groupToClassroom[gName] = cName;
@@ -575,7 +581,7 @@ function apiGetAdminDashboard(uid) {
   const yanqunMap = {};
   const recruitMap = {};
 
-  totalData.slice(1).sort((a, b) => new Date(a[0]) - new Date(b[0])).forEach(row => {
+  sortByTime(totalData.slice(1), 0).forEach(row => {
     const invId  = String(row[1]).trim(), invName = String(row[2]).trim();
     const gName  = String(row[3]).trim();
     const tarId  = String(row[4]).trim(), tarName = String(row[5]).trim();
@@ -704,7 +710,7 @@ function apiGetGiftData(uid) {
   const effAmt = getEffectiveAmount(ss);
 
   const permSheet = ss.getSheetByName('LINE權限表');
-  const permData  = permSheet.getDataRange().getValues();
+  const permData  = readSheet(permSheet, 5);
   let isPresident = false;
   let myClassroom = "";
   for (let i = 1; i < permData.length; i++) {
@@ -723,8 +729,7 @@ function apiGetGiftData(uid) {
   const giftData = giftSheet && giftSheet.getLastRow() > 1
     ? giftSheet.getRange(2, 1, giftSheet.getLastRow() - 1, 4).getValues() : [];
 
-  const recordData = recordSheet && recordSheet.getLastRow() > 1
-    ? recordSheet.getDataRange().getValues().slice(1) : [];
+  const recordData = readSheet(recordSheet, 10, true);
 
   const giftUsedCount = {};
   recordData.forEach(r => {
@@ -764,11 +769,10 @@ function apiGetGiftData(uid) {
     };
   });
 
-  const totalData = totalSheet && totalSheet.getLastRow() > 1
-    ? totalSheet.getDataRange().getValues().slice(1) : [];
+  const totalData = readSheet(totalSheet, 9, true);
 
   const groupMap = {};
-  totalData.sort((a, b) => new Date(a[0]) - new Date(b[0])).forEach(row => {
+  sortByTime(totalData, 0).forEach(row => {
     const gName   = String(row[3]).trim();
     const invId   = String(row[1]).trim();
     const invName = String(row[2]).trim();
@@ -984,7 +988,7 @@ function getPresidentInfo(uid, ss) {
     const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
     const permSheet = book.getSheetByName('LINE權限表');
     if (!permSheet) return result;
-    const permData = permSheet.getDataRange().getValues();
+    const permData = readSheet(permSheet, 5);
     for (let i = 1; i < permData.length; i++) {
       if (String(permData[i][0]).trim() === uidStr) {
         result.found       = true;
@@ -1012,15 +1016,37 @@ function isRegisteredUid(uid, ss) {
   try {
     const book = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
     const rosterSheet = book.getSheetByName('雁群總名冊');
-    if (rosterSheet && rosterSheet.getLastRow() > 1) {
-      const data = rosterSheet.getDataRange().getValues();
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]).trim() === uidStr) return true;
+    const lastRow = rosterSheet ? rosterSheet.getLastRow() : 0;
+    if (lastRow > 1) {
+      // 只需要 A 欄，不必把整份名冊搬下來
+      const ids = rosterSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]).trim() === uidStr) return true;
       }
     }
     // 管理者可能只在權限表、不在名冊
     return getPresidentInfo(uidStr, book).found;
   } catch(e) { return false; }
+}
+
+// 只讀指定欄數。getDataRange() 會一路讀到「曾經用過的最後一欄」，
+// 試算表若殘留空白欄或格式，每次請求都會白搬一堆空資料。
+// skipHeader=true 時直接從第 2 列開始讀，省下之後的 slice(1)。
+function readSheet(sheet, cols, skipHeader) {
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  const startRow = skipHeader ? 2 : 1;
+  if (lastRow < startRow) return [];
+  return sheet.getRange(startRow, 1, lastRow - startRow + 1, cols).getValues();
+}
+
+// 依時間欄排序。先把時間換算成數字再排，避免每次比較都 new Date()
+// —— 原本的寫法在 n 列時會配置 O(n log n) 個 Date 物件。
+function sortByTime(rows, col) {
+  return rows
+    .map(r => ({ row: r, t: r[col] instanceof Date ? r[col].getTime() : new Date(r[col]).getTime() }))
+    .sort((a, b) => a.t - b.t)
+    .map(x => x.row);
 }
 
 function getMapsFromData(rosterData) {
